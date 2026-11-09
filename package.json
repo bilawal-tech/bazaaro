@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "express": "^4.22.2",
+    "slugify": "^1.6.9"
+  }
+}
