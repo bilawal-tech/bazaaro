@@ -32,7 +32,7 @@ function Footer() {
           <div className="space-y-4">
             <Link to="/" className="text-2xl font-black tracking-tight inline-flex items-center gap-2 select-none">
               <span className="text-2xl">🛍️</span>
-              <span className="font-extrabold tracking-tight text-white">ZillionMall</span>
+              <span className="font-extrabold tracking-tight text-white">Bazaaro</span>
             </Link>
             <p className="text-sm leading-relaxed text-slate-300 font-medium max-w-sm">
               Pakistan ka best online ecommerce store. Quality products — fast delivery.
@@ -96,7 +96,7 @@ function Footer() {
       {/* Bottom bar credits styling */}
       <div className="border-t border-white/10 bg-black/20 text-slate-400">
         <div className="max-w-7xl mx-auto px-6 py-5 flex flex-col md:flex-row items-center justify-between gap-3">
-          <p className="text-xs font-bold tracking-wide">© {currentYear} ZillionMall — All rights reserved</p>
+          <p className="text-xs font-bold tracking-wide">© {currentYear} Bazaaro — All rights reserved</p>
           <p className="text-xs font-black text-slate-200 tracking-wide">Built with ❤️ by Bilawal Azeem</p>
         </div>
       </div>

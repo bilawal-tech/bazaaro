@@ -8,7 +8,7 @@ const {
   deleteUser,
   updateUserProfile,
 } = require('../controller/authcontroller');
-const { protect, adminOnly } = require('../middleware/AuthMiddleware');
+const { protect, adminOnly } = require('../middleware/authMiddleware');
 
 
 router.post('/register', register);

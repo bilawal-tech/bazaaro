@@ -99,8 +99,8 @@ function Navbar() {
             <Link to="/" className="text-xl font-black tracking-tight flex items-center gap-1.5 whitespace-nowrap group">
               <span className="text-xl transition-transform group-hover:scale-110 duration-200">🛍️</span>
               <span className="font-black tracking-tighter">
-                <span className="text-slate-900">Zillion</span>
-                <span className="text-[#2D6A4F]">Mall</span>
+                <span className="text-slate-900">Bazaa</span>
+                <span className="text-[#2D6A4F]">ro</span>
               </span>
             </Link>
           </div>
