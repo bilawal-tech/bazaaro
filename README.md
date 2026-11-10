@@ -1,4 +1,4 @@
-# 🛒eCommerce - Advanced Multi-Variant Store
+# Bazaaro - Multi-Variant eCommerce Store
 
 A high-performance, full-stack eCommerce platform built with the **MERN Stack** (MongoDB, Express, React, Node.js). This project features a sophisticated **Multi-Variant Inventory System** designed to handle complex product SKUs like apparel (Shirts, Pants) with specific attributes per variant.
 

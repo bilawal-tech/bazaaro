@@ -74,7 +74,7 @@ function RegisterPage() {
         <div className="px-8 pt-10 pb-6 text-center border-b border-white/5 bg-black/10">
           <Link to="/" className="text-3xl font-black tracking-tight inline-flex items-center gap-2 mb-3 select-none">
             <span>🛍️</span>
-            <span className="text-white font-extrabold">ZillionMall</span>
+            <span className="text-white font-extrabold">Bazaaro</span>
           </Link>
           <h1 className="text-white text-xl font-extrabold tracking-tight">
             Create Account

@@ -11,7 +11,7 @@ const {
   getproductBySlug,
   upload
 } = require('../controller/productController');
-const { protect, adminOnly } = require('../middleware/AuthMiddleware');
+const { protect, adminOnly } = require('../middleware/authMiddleware');
 
 // Public Routes 
 router.get('/',    getAllProducts);//ok
