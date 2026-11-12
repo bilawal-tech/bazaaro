@@ -12,7 +12,8 @@ const SizeSchema = new mongoose.Schema({
 
 const VariantSchema = new mongoose.Schema({
   color: { type: String, required: true, trim: true },
-  image: { type: String },
+  image: { type: String },   // pehli image (cart/card ke liye)
+  images: [{ type: String }], // is color ki saari images
   sizes: [SizeSchema],
 });
 

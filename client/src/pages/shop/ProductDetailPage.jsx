@@ -25,11 +25,12 @@ function ProductDetailPage() {
 
   // ── State ──────────────────────────────────
   const [quantity, setQuantity] = useState(1);
-  const [selectedColor, setSelectedColor] = useState('');
-  const [selectedSize, setSelectedSize] = useState('');
+  // Selection product ke saath bandhi hai; naya product aane par defaults dobara banenge
+  const [selection, setSelection] = useState({ pid: null, color: '', size: '' });
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState('');
   const [showReview, setShowReview] = useState(false);
+  const [activeImage, setActiveImage] = useState(null);
 
   const BACKEND_URL = 'http://localhost:5000';
 
@@ -55,21 +56,34 @@ function ProductDetailPage() {
     return variant?.sizes || [];
   };
 
+  // ── Default: pehla in-stock color aur uski pehli in-stock size ──
+  const defaultVariant = product?.variants?.length
+    ? product.variants.find(v => v.sizes.some(s => s.stock > 0)) || product.variants[0]
+    : null;
+  const defaultSize = defaultVariant
+    ? (defaultVariant.sizes.find(s => s.stock > 0) || defaultVariant.sizes[0])?.size || ''
+    : '';
+
+  const isCurrent = selection.pid === product?._id;
+  const selectedColor = isCurrent ? selection.color : (defaultVariant?.color || '');
+  const selectedSize  = isCurrent ? selection.size  : defaultSize;
+
   const sizesForColor = getSizesForColor(selectedColor);
 
-  // ── Set default color ─────────────────────
-  useEffect(() => {
-    if (uniqueColors.length > 0 && !selectedColor) {
-      setSelectedColor(uniqueColors[0]);
-    }
-  }, [uniqueColors, selectedColor]);
+  // ── Color badalne par us color ki pehli in-stock size chuno ──
+  const handleColorChange = (color) => {
+    const sizes = getSizesForColor(color);
+    const firstSize = sizes.find(s => s.stock > 0) || sizes[0];
+    setSelection({ pid: product._id, color, size: firstSize?.size || '' });
+    setQuantity(1);
+    setActiveImage(null);
+  };
 
-  // ── Set default size ─────────────────────
-  useEffect(() => {
-    if (sizesForColor.length > 0 && !selectedSize) {
-      setSelectedSize(sizesForColor[0].size);
-    }
-  }, [sizesForColor, selectedSize]);
+  const handleSizeChange = (size) => {
+    setSelection({ pid: product._id, color: selectedColor, size });
+    setQuantity(1);
+    setActiveImage(null);
+  };
 
   // ── Get valid image URL ──────────────────
   const getValidImageUrl = (imgObj) => {
@@ -105,18 +119,33 @@ function ProductDetailPage() {
   }
 
   // ── Get current size details ───────────────
+  // Variants wale product mein stock/price sirf selected size ka hota hai.
+  // `||` use nahi karte kyunke stock 0 bhi sahi value hai.
+  const hasVariants = uniqueColors.length > 0;
   const currentSize = sizesForColor.find(s => s.size === selectedSize);
-  const currentStock = currentSize?.stock || product.stock;
-  const currentPrice = currentSize?.price || product.price;
-  const currentDiscountPrice = currentSize?.discountPrice || product.discountPrice;
+  const selectedVariant = product.variants?.find(v => v.color === selectedColor);
+  const currentStock = hasVariants ? (currentSize?.stock ?? 0) : (product.stock ?? 0);
+  const currentPrice = hasVariants ? (currentSize?.price ?? product.price) : product.price;
+  const currentDiscountPrice = hasVariants ? (currentSize?.discountPrice ?? 0) : (product.discountPrice ?? 0);
   const hasDiscount = currentDiscountPrice > 0 && currentDiscountPrice < currentPrice;
   const displayPrice = hasDiscount ? currentDiscountPrice : currentPrice;
+  // Selected color ki saari images (purane products ke liye single `image`)
+  const variantImages = selectedVariant?.images?.length
+    ? selectedVariant.images
+    : selectedVariant?.image ? [selectedVariant.image] : [];
+  const mainImage =
+    activeImage || currentSize?.image || variantImages[0] || product.images?.[0];
 
   // ── Handlers ───────────────────────────────
   const handleAddToCart = () => {
     if (!user) {
       alert('Please login first');
       navigate('/login');
+      return;
+    }
+
+    if (hasVariants && (!selectedColor || !selectedSize)) {
+      alert('Please select color and size');
       return;
     }
 
@@ -129,7 +158,7 @@ function ProductDetailPage() {
       if (!res.error) {
         alert('✅ Item added to cart!');
       } else {
-        alert('Failed to add to cart');
+        alert(res.payload || 'Failed to add to cart');
       }
     });
   };
@@ -181,11 +210,7 @@ function ProductDetailPage() {
             {/* Main Image */}
             <div className="rounded-xl overflow-hidden h-96 border border-gray-200 flex items-center justify-center bg-gray-50">
               <img
-                src={getValidImageUrl(
-                  currentSize?.image || 
-                  product.variants?.[0]?.image || 
-                  product.images?.[0]
-                )}
+                src={getValidImageUrl(mainImage)}
                 alt={product.name}
                 className="max-w-full max-h-full object-contain"
               />
@@ -197,7 +222,8 @@ function ProductDetailPage() {
               {product.images && product.images.map((img, idx) => (
                 <button
                   key={`base-${idx}`}
-                  className="w-16 h-16 rounded-lg overflow-hidden border-2 border-gray-300 flex-shrink-0"
+                  onClick={() => setActiveImage(img)}
+                  className="w-16 h-16 rounded-lg overflow-hidden border-2 border-gray-300 hover:border-green-500 flex-shrink-0"
                 >
                   <img
                     src={getValidImageUrl(img)}
@@ -207,30 +233,22 @@ function ProductDetailPage() {
                 </button>
               ))}
 
-              {/* Color variants */}
-              {uniqueColors.map((color, idx) => {
-                const variant = product.variants?.find(v => v.color === color);
-                return variant?.image ? (
-                  <button
-                    key={`color-${idx}`}
-                    onClick={() => setSelectedColor(color)}
-                    className={`w-16 h-16 rounded-lg overflow-hidden border-2 flex-shrink-0 transition relative ${
-                      selectedColor === color
-                        ? 'border-green-500'
-                        : 'border-gray-300 hover:border-gray-400'
-                    }`}
-                  >
-                    <img
-                      src={getValidImageUrl(variant.image)}
-                      alt={color}
-                      className="w-full h-full object-cover"
-                    />
-                    <p className="absolute bottom-0 left-0 right-0 bg-black/50 text-white text-xs px-1 py-0.5 truncate">
-                      {color}
-                    </p>
-                  </button>
-                ) : null;
-              })}
+              {/* Selected color ki images */}
+              {variantImages.map((img, idx) => (
+                <button
+                  key={`variant-${idx}`}
+                  onClick={() => setActiveImage(img)}
+                  className={`w-16 h-16 rounded-lg overflow-hidden border-2 flex-shrink-0 transition ${
+                    mainImage === img ? 'border-green-500' : 'border-gray-300 hover:border-green-500'
+                  }`}
+                >
+                  <img
+                    src={getValidImageUrl(img)}
+                    alt={`${selectedColor} ${idx + 1}`}
+                    className="w-full h-full object-cover"
+                  />
+                </button>
+              ))}
             </div>
           </div>
 
@@ -296,7 +314,7 @@ function ProductDetailPage() {
                       return (
                         <button
                           key={color}
-                          onClick={() => setSelectedColor(color)}
+                          onClick={() => handleColorChange(color)}
                           disabled={isOutOfStock}
                           className={`px-3 py-1 rounded-lg text-sm border transition relative ${
                             selectedColor === color
@@ -323,7 +341,7 @@ function ProductDetailPage() {
                     {sizesForColor.map(sz => (
                       <button
                         key={sz.size}
-                        onClick={() => setSelectedSize(sz.size)}
+                        onClick={() => handleSizeChange(sz.size)}
                         disabled={sz.stock === 0}
                         className={`px-3 py-1 rounded-lg text-sm border transition relative ${
                           selectedSize === sz.size

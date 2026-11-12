@@ -1,49 +1,73 @@
 import { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import {
   createProduct,
+  updateProduct,
+  getSingleProduct,
+  clearProduct,
+  selectProduct,
   selectLoading,
 } from '../../redux/slices/productSlice';
+import Loader from '../../components/common/Loader';
 import {
   getAllCategories,
   selectCategories,
   createCategory,
 } from '../../redux/slices/categorySlice';
 
-function CreateProductPage() {
+const BACKEND_URL = 'http://localhost:5000';
+
+const blankSize = () => ({ size: '', stock: 0, price: 0, costPrice: 0, discountPrice: 0, image: null });
+const blankVariant = () => ({
+  id: Date.now() + Math.random(),
+  color: '',
+  sizes: [blankSize()],
+  existingImages: [], // server par pehle se maujood images (edit mode)
+  image: [],          // nayi files
+  imagePreview: [],   // nayi files ke preview
+});
+
+// Create aur Edit dono isi form se hote hain. `product` ho to edit mode.
+function ProductForm({ product }) {
+  const isEdit = !!product;
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const categories = useSelector(selectCategories) || [];
   const loading = useSelector(selectLoading);
 
   // ── Main Form State ───────────────────────────
+  // Price aur stock yahan nahi: woh har variant ki size par hote hain
   const [formData, setFormData] = useState({
-    name: '',
-    brand: '',
-    description: '',
-    costPrice: '',
-    price: '',
-    discountPrice: '',
-    stock: '',
-    unitType: 'unit',
-    category: '',
+    name: product?.name || '',
+    brand: product?.brand || '',
+    description: product?.description || '',
+    unitType: product?.unitType || 'unit',
+    category: product?.category?._id || '',
     newCategoryName: '',
   });
 
-  // ── Variants State — Advanced ──────────────────
-  const [variants, setVariants] = useState([
-    {
-      id: Date.now(),
-      color: '',
-      sizes: [
-        { size: '', stock: 0, price: 0, costPrice: 0, discountPrice: 0 }
-      ],
-      image: [], // Array to handle multiple photos
-      imagePreview: [] // Array to handle multiple previews
-    }
-  ]);
+  // ── Variants State ─────────────────────────────
+  const [variants, setVariants] = useState(() =>
+    product?.variants?.length
+      ? product.variants.map((v, i) => ({
+          id: Date.now() + i,
+          color: v.color,
+          sizes: v.sizes.map(sz => ({
+            size: sz.size,
+            stock: sz.stock ?? 0,
+            price: sz.price ?? 0,
+            costPrice: sz.costPrice ?? 0,
+            discountPrice: sz.discountPrice ?? 0,
+            image: sz.image || null,
+          })),
+          existingImages: v.images?.length ? v.images : (v.image ? [v.image] : []),
+          image: [],
+          imagePreview: [],
+        }))
+      : [blankVariant()]
+  );
 
   const [isNewCategory, setIsNewCategory] = useState(false);
   const [errors, setErrors] = useState({});
@@ -75,18 +99,7 @@ function CreateProductPage() {
 
   // Add new color variant
   const addVariant = () => {
-    setVariants([
-      ...variants,
-      {
-        id: Date.now(),
-        color: '',
-        sizes: [
-          { size: '', stock: 0, price: 0, costPrice: 0, discountPrice: 0 }
-        ],
-        image: [],
-        imagePreview: []
-      }
-    ]);
+    setVariants([...variants, blankVariant()]);
     toast.success('✅ New color variant added');
   };
 
@@ -104,7 +117,7 @@ function CreateProductPage() {
           ...v,
           sizes: [
             ...v.sizes,
-            { size: '', stock: 0, price: 0, costPrice: 0, discountPrice: 0 }
+            blankSize()
           ]
         };
       }
@@ -186,6 +199,16 @@ function CreateProductPage() {
     }));
   };
 
+  // Server par pehle se maujood image hatao (save par hi asar hoga)
+  const removeExistingImage = (variantId, imageIndex) => {
+    setVariants(variants.map(v => {
+      if (v.id === variantId) {
+        return { ...v, existingImages: v.existingImages.filter((_, idx) => idx !== imageIndex) };
+      }
+      return v;
+    }));
+  };
+
   // ══════════════════════════════════════════════
   // VALIDATION
   // ══════════════════════════════════════════════
@@ -195,14 +218,6 @@ function CreateProductPage() {
 
     if (!formData.name.trim()) {
       newErrors.name = 'Product name is required';
-    }
-
-    if (!formData.price) {
-      newErrors.price = 'Base price is required';
-    }
-
-    if (!formData.stock) {
-      newErrors.stock = 'Base stock is required';
     }
 
     if (isNewCategory && !formData.newCategoryName.trim()) {
@@ -218,7 +233,7 @@ function CreateProductPage() {
         if (!variant.color.trim()) {
           newErrors[`variant_${idx}_color`] = 'Color is required';
         }
-        if (!variant.image || variant.image.length === 0) {
+        if (variant.existingImages.length + variant.image.length === 0) {
           newErrors[`variant_${idx}_image`] = 'At least one variant image is required';
         }
         if (variant.sizes.length === 0) {
@@ -228,8 +243,14 @@ function CreateProductPage() {
             if (!sz.size.trim()) {
               newErrors[`variant_${idx}_size_${szIdx}_size`] = 'Size is required';
             }
-            if (sz.price <= 0) {
+            if (!(sz.price > 0)) {
               newErrors[`variant_${idx}_size_${szIdx}_price`] = 'Valid price required';
+            }
+            if (!Number.isInteger(sz.stock) || sz.stock < 0) {
+              newErrors[`variant_${idx}_size_${szIdx}_stock`] = 'Stock must be 0 or more (whole number)';
+            }
+            if (sz.discountPrice > 0 && sz.discountPrice >= sz.price) {
+              newErrors[`variant_${idx}_size_${szIdx}_discount`] = 'Discount must be less than price';
             }
           });
         }
@@ -271,54 +292,45 @@ function CreateProductPage() {
 
       // Basic fields
       payload.append('name', formData.name);
-      if (formData.brand) payload.append('brand', formData.brand);
-      if (formData.description) payload.append('description', formData.description);
-      if (formData.costPrice) payload.append('costPrice', formData.costPrice);
-      payload.append('price', formData.price);
-      if (formData.discountPrice) payload.append('discountPrice', formData.discountPrice);
-      payload.append('stock', formData.stock);
+      payload.append('brand', formData.brand);
+      payload.append('description', formData.description);
       payload.append('unitType', formData.unitType);
       payload.append('category', categoryId);
 
-      // Process variants
+      // Variants: nayi files alag, baqi data JSON mein
       const processedVariants = variants.map((variant, variantIdx) => {
-        // Add variant multiple images
-        if (variant.image && variant.image.length > 0) {
-          variant.image.forEach((img) => {
-            payload.append(`variant_${variantIdx}_image`, img);
-          });
-        }
+        variant.image.forEach((file) => {
+          payload.append(`variant_${variantIdx}_image`, file);
+        });
 
-        // Process sizes
-        const sizes = variant.sizes.map((sz) => {
-          return {
-            size: sz.size,
+        return {
+          color: variant.color.trim(),
+          existingImages: variant.existingImages,
+          sizes: variant.sizes.map((sz) => ({
+            size: sz.size.trim(),
             stock: sz.stock,
             price: sz.price,
             costPrice: sz.costPrice,
             discountPrice: sz.discountPrice,
-          };
-        });
-
-        return {
-          color: variant.color,
-          imageKey: `variant_${variantIdx}_image`,
-          sizes
+            image: sz.image,
+          })),
         };
       });
 
       payload.append('variants', JSON.stringify(processedVariants));
 
-      const result = await dispatch(createProduct(payload)).unwrap();
+      const result = isEdit
+        ? await dispatch(updateProduct({ id: product._id, productData: payload })).unwrap()
+        : await dispatch(createProduct(payload)).unwrap();
 
       if (result.success) {
-        toast.success('🎉 Product created successfully!');
+        toast.success(isEdit ? '🎉 Product updated!' : '🎉 Product created successfully!');
         setTimeout(() => {
           navigate('/admin/products');
-        }, 1500);
+        }, 1200);
       }
     } catch (err) {
-      toast.error('❌ Failed to create product');
+      toast.error(`❌ ${typeof err === 'string' ? err : 'Failed to save product'}`);
       console.error('Error:', err);
     }
   };
@@ -330,7 +342,7 @@ function CreateProductPage() {
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-gray-900 text-2xl font-bold">
-            Create Product
+            {isEdit ? 'Edit Product' : 'Create Product'}
           </h1>
           <button
             onClick={() => navigate('/admin/products')}
@@ -408,64 +420,6 @@ function CreateProductPage() {
                 rows={3}
                 className="w-full px-3 py-2 rounded-lg text-sm text-gray-900 outline-none border border-gray-300 focus:border-green-500"
               />
-            </div>
-          </div>
-
-          {/* BASE PRICING */}
-          <div className="mb-6">
-            <h2 className="text-gray-900 font-bold mb-4 text-lg">Base Pricing & Stock</h2>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="text-gray-700 text-sm block mb-1">Cost Price</label>
-                <input
-                  type="number"
-                  name="costPrice"
-                  value={formData.costPrice}
-                  onChange={handleChange}
-                  placeholder="e.g., 500"
-                  className="w-full px-3 py-2 rounded-lg text-sm text-gray-900 outline-none border border-gray-300 focus:border-green-500"
-                />
-              </div>
-
-              <div>
-                <label className="text-gray-700 text-sm block mb-1">Price *</label>
-                <input
-                  type="number"
-                  name="price"
-                  value={formData.price}
-                  onChange={handleChange}
-                  className={`w-full px-3 py-2 rounded-lg text-sm text-gray-900 outline-none border ${
-                    errors.price ? 'border-red-500 bg-red-50' : 'border-gray-300 focus:border-green-500'
-                  }`}
-                />
-                {errors.price && <p className="text-red-500 text-xs mt-1">⚠️ {errors.price}</p>}
-              </div>
-
-              <div>
-                <label className="text-gray-700 text-sm block mb-1">Discount Price</label>
-                <input
-                  type="number"
-                  name="discountPrice"
-                  value={formData.discountPrice}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2 rounded-lg text-sm text-gray-900 outline-none border border-gray-300 focus:border-green-500"
-                />
-              </div>
-
-              <div>
-                <label className="text-gray-700 text-sm block mb-1">Stock *</label>
-                <input
-                  type="number"
-                  name="stock"
-                  value={formData.stock}
-                  onChange={handleChange}
-                  className={`w-full px-3 py-2 rounded-lg text-sm text-gray-900 outline-none border ${
-                    errors.stock ? 'border-red-500 bg-red-50' : 'border-gray-300 focus:border-green-500'
-                  }`}
-                />
-                {errors.stock && <p className="text-red-500 text-xs mt-1">⚠️ {errors.stock}</p>}
-              </div>
             </div>
           </div>
 
@@ -553,9 +507,9 @@ function CreateProductPage() {
                     }`}
                   >
                     <div className="flex items-center gap-3">
-                      {variant.imagePreview && variant.imagePreview.length > 0 && (
+                      {(variant.existingImages.length > 0 || variant.imagePreview.length > 0) && (
                         <img
-                          src={variant.imagePreview[0]} // Display first image as thumbnail
+                          src={variant.existingImages[0] ? `${BACKEND_URL}${variant.existingImages[0]}` : variant.imagePreview[0]}
                           alt={variant.color}
                           className="w-10 h-10 rounded object-cover"
                         />
@@ -602,6 +556,29 @@ function CreateProductPage() {
                           className="block w-full text-sm text-gray-600 mb-2"
                         />
                         
+                        {/* Pehle se saved images (edit mode) */}
+                        {variant.existingImages.length > 0 && (
+                          <div className="flex flex-wrap gap-3 mt-3">
+                            {variant.existingImages.map((url, idx) => (
+                              <div key={url} className="relative w-20 h-20">
+                                <img
+                                  src={`${BACKEND_URL}${url}`}
+                                  alt={`Saved ${idx + 1}`}
+                                  className="w-full h-full rounded-lg object-cover border border-gray-200"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => removeExistingImage(variant.id, idx)}
+                                  className="absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs shadow-md"
+                                  title="Remove saved image"
+                                >
+                                  ✕
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
                         {/* Selected Images Preview Gallery */}
                         {variant.imagePreview && variant.imagePreview.length > 0 && (
                           <div className="flex flex-wrap gap-3 mt-3">
@@ -691,14 +668,24 @@ function CreateProductPage() {
                                 />
                               </div>
 
+                              {errors[`variant_${variantIdx}_size_${sizeIdx}_discount`] && (
+                                <p className="text-red-500 text-xs">⚠️ {errors[`variant_${variantIdx}_size_${sizeIdx}_discount`]}</p>
+                              )}
+
                               {/* Stock */}
                               <input
                                 type="number"
+                                min="0"
                                 value={size.stock}
                                 onChange={(e) => handleSizeChange(variant.id, sizeIdx, 'stock', e.target.value)}
                                 placeholder="Stock"
-                                className="w-full px-2 py-1 rounded text-sm text-gray-900 outline-none border border-gray-300"
+                                className={`w-full px-2 py-1 rounded text-sm text-gray-900 outline-none border ${
+                                  errors[`variant_${variantIdx}_size_${sizeIdx}_stock`] ? 'border-red-500' : 'border-gray-300'
+                                }`}
                               />
+                              {errors[`variant_${variantIdx}_size_${sizeIdx}_stock`] && (
+                                <p className="text-red-500 text-xs">⚠️ {errors[`variant_${variantIdx}_size_${sizeIdx}_stock`]}</p>
+                              )}
 
                               {variant.sizes.length > 1 && (
                                 <button
@@ -737,12 +724,32 @@ function CreateProductPage() {
             disabled={loading}
             className="w-full py-3 rounded-lg bg-green-600 hover:bg-green-700 text-white font-bold text-lg transition disabled:opacity-50"
           >
-            {loading ? '⏳ Creating...' : '✅ Create Product'}
+            {loading ? '⏳ Saving...' : isEdit ? '✅ Save Changes' : '✅ Create Product'}
           </button>
         </form>
       </div>
     </div>
   );
+}
+
+// Route wrapper: /admin/products/create  ya  /admin/products/:id/edit
+function CreateProductPage() {
+  const { id } = useParams();
+  const dispatch = useDispatch();
+  const productData = useSelector(selectProduct);
+  const loading = useSelector(selectLoading);
+  const product = productData?.product ? productData.product : productData;
+
+  useEffect(() => {
+    if (id) dispatch(getSingleProduct(id));
+    return () => {
+      dispatch(clearProduct());
+    };
+  }, [dispatch, id]);
+
+  if (id && (loading || !product?._id || product._id !== id)) return <Loader />;
+
+  return <ProductForm key={id || 'new'} product={id ? product : null} />;
 }
 
 export default CreateProductPage;
