@@ -158,7 +158,14 @@ function buildVariants(variantsData, files = []) {
       throw new Error(`Variant "${color}": at least one size is required`);
     }
 
-    const variantFile = files.find((f) => f.fieldname === `variant_${i}_image`);
+    // Is color ki saari images: purani (jo admin ne rakhi) + nayi upload hui
+    const keptImages = Array.isArray(variant.existingImages)
+      ? variant.existingImages.filter((u) => typeof u === 'string' && u)
+      : variant.image ? [variant.image] : [];
+    const newImages = files
+      .filter((f) => f.fieldname === `variant_${i}_image`)
+      .map((f) => `/uploads/products/${f.filename}`);
+    const images = [...keptImages, ...newImages];
     const seenSizes = new Set();
 
     const sizes = variant.sizes.map((s, j) => {
@@ -196,7 +203,8 @@ function buildVariants(variantsData, files = []) {
 
     return {
       color,
-      image: variantFile ? `/uploads/products/${variantFile.filename}` : variant.image || null,
+      image: images[0] || null,
+      images,
       sizes,
     };
   });

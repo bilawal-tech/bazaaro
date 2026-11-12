@@ -318,7 +318,7 @@ async function updateProduct(req, res) {
 
     if (name)                 product.name          = name;
     if (brand !== undefined)  product.brand         = brand;
-    if (description)          product.description   = description;
+    if (description !== undefined) product.description = description;
     if (costPrice !== undefined) product.costPrice  = Number(costPrice);
     if (price)                product.price         = Number(price);
     

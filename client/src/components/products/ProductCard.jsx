@@ -1,15 +1,26 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { addToCart } from '../../redux/slices/cartSlice';
 
 function ProductCard({ product }) {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
 
   // base url
   const BACKEND_URL = "http://localhost:5000"; 
 
+  // variants wale product mein color/size chuni jati hai, is liye detail page par bhejo
+  const variantList = product.variants || [];
+  const hasVariants = variantList.length > 0;
+  const sizeCount = variantList.reduce((n, v) => n + (v.sizes?.length || 0), 0);
+  const showFrom = sizeCount > 1;
+
   // add to cart
   const handleAddToCart = () => {
+    if (hasVariants) {
+      navigate(`/product/${product._id}`);
+      return;
+    }
     dispatch(addToCart({
       productId: product._id,
       quantity:  1,
@@ -22,11 +33,14 @@ function ProductCard({ product }) {
 
   // image handle
   const getProductImage = () => {
-    if (!product.images || product.images.length === 0) {
+    const firstImage =
+      product.images?.[0] ||
+      variantList.find(v => v.image)?.image ||
+      variantList.flatMap(v => v.sizes || []).find(s => s.image)?.image;
+
+    if (!firstImage) {
       return '/placeholder.png';
     }
-
-    const firstImage = product.images[0];
     
     // safe string extract
     // agar image object hai toh uski url/path property nikalega, warna khud string hoga
@@ -100,6 +114,7 @@ function ProductCard({ product }) {
           {/* price */}
           <div className="flex items-baseline gap-2 mb-4">
             <span className="text-[#1B4332] text-lg font-black tracking-tight">
+              {showFrom && <span className="text-slate-400 text-xs font-bold mr-1">From</span>}
               Rs. {displayPrice?.toLocaleString()}
             </span>
             {hasDiscount && (
@@ -115,7 +130,7 @@ function ProductCard({ product }) {
             disabled={product.stock === 0}
             className="w-full py-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-300 bg-[#1B4332] text-white hover:bg-[#F4A261] disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed active:scale-[0.98] shadow-sm"
           >
-            {product.stock === 0 ? 'Unavailable' : 'Add to Cart'}
+            {product.stock === 0 ? 'Unavailable' : hasVariants ? 'Select Options' : 'Add to Cart'}
           </button>
         </div>
 
