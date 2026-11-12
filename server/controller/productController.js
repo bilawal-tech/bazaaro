@@ -3,6 +3,7 @@ const Product = require('../models/Product');
 const Category = require('../models/Category');
 const multer = require('multer');
 const path = require('path');
+const { buildVariants } = require('../utils/variants');
 
 // ── Multer Storage Configuration (Accepts ALL image types) ───
 const storage = multer.diskStorage({
@@ -43,7 +44,8 @@ async function createProduct(req, res) {
       });
     }
 
-    if (!price || Number(price) <= 0) {
+    const hasVariantInput = Array.isArray(variants) ? variants.length > 0 : !!variants;
+    if (!hasVariantInput && (!price || Number(price) <= 0)) {
       return res.status(400).json({
         success: false,
         message: 'Price is required',
@@ -78,43 +80,18 @@ async function createProduct(req, res) {
       });
     }
 
-    // Process variants
+    // Process variants (validate + images)
     let processedVariants = [];
     if (variants) {
       try {
-        const variantsData = typeof variants === 'string' 
-          ? JSON.parse(variants) 
-          : variants;
-
-        processedVariants = variantsData.map((variant, variantIdx) => {
-          const variantImageKey = `variant_${variantIdx}_image`;
-          const variantImageFile = req.files?.find(f => f.fieldname === variantImageKey);
-
-          return {
-            color: variant.color,
-            image: variantImageFile 
-              ? `/uploads/products/${variantImageFile.filename}` 
-              : null,
-            sizes: variant.sizes.map((size, sizeIdx) => {
-              const sizeImageKey = `variant_${variantIdx}_size_${sizeIdx}_image`;
-              const sizeImageFile = req.files?.find(f => f.fieldname === sizeImageKey);
-
-              return {
-                size: size.size,
-                stock: Number(size.stock),
-                price: Number(size.price),
-                costPrice: Number(size.costPrice) || 0,
-                discountPrice: Number(size.discountPrice) || 0,
-                image: sizeImageFile 
-                  ? `/uploads/products/${sizeImageFile.filename}` 
-                  : null
-              };
-            })
-          };
-        });
+        const variantsData = typeof variants === 'string' ? JSON.parse(variants) : variants;
+        processedVariants = buildVariants(variantsData, req.files || []);
       } catch (err) {
-        console.error('Variant parsing error:', err);
-        processedVariants = [];
+        return res.status(400).json({
+          success: false,
+          message: err.message,
+          field: 'variants'
+        });
       }
     }
 
@@ -124,7 +101,7 @@ async function createProduct(req, res) {
       brand: brand?.trim() || '',
       description: description?.trim() || '',
       costPrice: costPrice ? Number(costPrice) : 0,
-      price: Number(price),
+      price: Number(price) || 0,
       discountPrice: discountPrice ? Number(discountPrice) : 0,
       category,
       unitType: unitType || 'unit',
@@ -193,11 +170,19 @@ async function getAllProducts(req, res) {
     }
 
     // ── Sorting 
+    // Dono style chalte hain: sortby=-price  ya  sortby=price&sortorder=asc
+    const SORTABLE = ['createdAt', 'price', 'name', 'ratings', 'stock'];
     let sortBy = { createdAt: -1 }; // default — latest pehle
     if (req.query.sortby) {
-      const sortField = req.query.sortby;
-      const sortOrder = req.query.sortorder === 'asc' ? 1 : -1;
-      sortBy = { [sortField]: sortOrder };
+      const raw = String(req.query.sortby);
+      const descending = raw.startsWith('-');
+      const sortField = raw.replace(/^[-+]/, '');
+      if (SORTABLE.includes(sortField)) {
+        const order = raw.startsWith('-') || raw.startsWith('+')
+          ? (descending ? -1 : 1)
+          : (req.query.sortorder === 'asc' ? 1 : -1);
+        sortBy = { [sortField]: order };
+      }
     }
 
     // ── Pagination ────────────────────────────
@@ -234,12 +219,10 @@ async function getSingleProduct(req, res) {
   try {
     const { id } = req.params;
 
-    // CastError Protection
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).json({ success: false, message: 'Invalid Product ID format' });
-    }
+    // ID ho to ID se, warna slug se dhoondo
+    const filter = mongoose.Types.ObjectId.isValid(id) ? { _id: id } : { slug: id };
 
-    const product = await Product.findById(id)
+    const product = await Product.findOne(filter)
       .populate('category', 'name slug')
       .populate('reviews.user', 'name avatar');
 
@@ -325,12 +308,12 @@ async function updateProduct(req, res) {
       product.category = category;
     }
 
-    // New image fields logic for edit flow
-    if (req.files && req.files.length > 0) {
-      const newImages = req.files.map(file => ({
+    // Base images: sirf nayi aayen to replace; variant_ wali files alag handle hoti hain
+    const baseFiles = (req.files || []).filter(f => !f.fieldname.startsWith('variant_'));
+    if (baseFiles.length > 0) {
+      product.images = baseFiles.map(file => ({
         url: `/uploads/products/${file.filename}`
       }));
-      product.images = newImages; 
     }
 
     if (name)                 product.name          = name;
@@ -341,7 +324,14 @@ async function updateProduct(req, res) {
     
     if (discountPrice !== undefined) product.discountPrice = Number(discountPrice);
     if (stock !== undefined)  product.stock         = Number(stock);
-    if (variants)             product.variants      = typeof variants === 'string' ? JSON.parse(variants) : variants;
+    if (variants) {
+      try {
+        const variantsData = typeof variants === 'string' ? JSON.parse(variants) : variants;
+        product.variants = buildVariants(variantsData, req.files || []);
+      } catch (err) {
+        return res.status(400).json({ success: false, message: err.message, field: 'variants' });
+      }
+    }
 
     await product.save(); 
 

@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const { resolveLine } = require('../utils/variants');
 
 const CartItemSchema = new mongoose.Schema({
   product: {
@@ -56,52 +57,47 @@ const CartSchema = new mongoose.Schema(
       required: true,
       default: 0,
     },
-    expireAt: {
+    // Cart ab delete nahi hota (pehle TTL se 24 ghante baad ura diya jata tha).
+    // Abandoned cart analytics ke liye last activity ka time rakhte hain.
+    lastActivityAt: {
       type: Date,
-      default: () => new Date(Date.now() + 24 * 60 * 60 * 1000),
+      default: Date.now,
+      index: true,
     },
   },
   { timestamps: true }
 );
-
-// Cart expire hone ke liye index lagao
-// index({ expireAt: 1 } => apply on this index 
-//{ expireAfterSeconds: 0 }); => after deadline o secomds ke baad delete kar do
-CartSchema.index({ expireAt: 1 }, { expireAfterSeconds: 0 });
 
 // ── 1. Totals calculate karo ──────────────────
 CartSchema.methods.calculateTotals = function () {
   this.totalPrice = 0;
   this.totalQuantity = 0;
 
-  // DSA: O(n) — ek baar mein dono
   this.items.forEach((item) => {
     this.totalPrice    += item.currentProductPrice * item.quantity;
     this.totalQuantity += item.quantity;
   });
 };
 
-// ── 2. Prices sync karo DB se ─────────────────
+// ── 2. Prices sync karo DB se (variant level) ─
 CartSchema.methods.updateProductPrices = async function () {
   const Product = mongoose.model('Product');
 
-  for (let item of this.items) {
+  for (const item of this.items) {
     const product = await Product.findById(item.product);
-    if (product) {
-      item.currentProductPrice = product.discountPrice > 0
-        ? product.discountPrice
-        : product.price;
-    }
+    if (!product) continue;
+
+    const line = resolveLine(product, item.color, item.size);
+    if (line.ok) item.currentProductPrice = line.unitPrice;
   }
   this.calculateTotals();
 };
-
 
 CartSchema.pre('save', function () {
   if (this.isModified('items')) {
     this.calculateTotals();
   }
- 
+  this.lastActivityAt = new Date();
 });
 
 module.exports = mongoose.model('Cart', CartSchema);

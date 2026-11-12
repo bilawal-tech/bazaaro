@@ -108,9 +108,10 @@ const OrderSchema = new mongoose.Schema({
     // Order status
     orderStatus: {
         type: String,
-        enum: ['Processing', 'Shipped', 'Delivered', 'Cancelled'],
+        enum: ['processing', 'shipped', 'delivered', 'cancelled'],
         required: [true, 'Order status is required'],
-        default: 'Processing',
+        default: 'processing',
+        lowercase: true,
     },
     deliveredAt: {
         type: Date,
@@ -140,12 +141,12 @@ OrderSchema.methods.calculateTotals = function () {
 OrderSchema.methods.UpdateOrderStatus = function (newStatus) {
     this.orderStatus = newStatus;
 
-    if (newStatus === 'Delivered') {
+    if (newStatus === 'delivered') {
         this.deliveredAt = Date.now();
         this.PaymentStatus = 'Completed';
         this.paidAt = Date.now();
-    } 
-    if (newStatus === 'Cancelled') {
+    }
+    if (newStatus === 'cancelled') {
         this.cancelledAt = Date.now();
     }
 }

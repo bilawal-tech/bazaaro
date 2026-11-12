@@ -52,6 +52,36 @@ const ProductSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// Variants hon to product ka stock = sab sizes ka total, aur price = sab se
+// sasti size ki ("from" price). Validate se pehle chalta hai taake `price`
+// required hone ka check variants wale product par pass ho.
+ProductSchema.pre('validate', function() {
+  if (!this.variants || this.variants.length === 0) return;
+
+  let total = 0;
+  let cheapest = null;
+  let cheapestEffective = Infinity;
+
+  for (const v of this.variants) {
+    for (const s of v.sizes) {
+      total += s.stock || 0;
+      const eff = s.discountPrice > 0 && s.discountPrice < s.price ? s.discountPrice : s.price;
+      if (eff < cheapestEffective) {
+        cheapestEffective = eff;
+        cheapest = s;
+      }
+    }
+  }
+
+  this.stock = total;
+  if (cheapest) {
+    this.price = cheapest.price;
+    this.discountPrice = cheapest.discountPrice > 0 && cheapest.discountPrice < cheapest.price
+      ? cheapest.discountPrice
+      : 0;
+  }
+});
+
 ProductSchema.pre('save', function() {
   if (this.isModified('name')) {
     this.slug = slugify(this.name, { lower: true, strict: true });
