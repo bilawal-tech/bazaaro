@@ -1,6 +1,14 @@
 const Order   = require('../models/Order');
 const Cart    = require('../models/Cart');
 const Product = require('../models/Product');
+const {
+  resolveLine,
+  reserveStock,
+  releaseStock,
+  linesFromOrderItems,
+} = require('../utils/variants');
+
+const STATUSES = ['processing', 'shipped', 'delivered', 'cancelled'];
 
 // ── Create Order ──────────────────────────────
 async function createOrder(req, res) {
@@ -17,10 +25,12 @@ async function createOrder(req, res) {
       });
     }
 
-    // 2. Stock check karo — har item ka
-    for (let item of cart.items) {
-      const product = await Product.findById(item.product);
+    // 2. Har item ko DB se resolve karo: price aur stock server se aate hain
+    const lines = [];
+    const orderItems = [];
 
+    for (const item of cart.items) {
+      const product = await Product.findById(item.product);
       if (!product) {
         return res.status(404).json({
           success: false,
@@ -28,43 +38,60 @@ async function createOrder(req, res) {
         });
       }
 
-      if (product.stock < item.quantity) {
+      const line = resolveLine(product, item.color, item.size);
+      if (!line.ok) {
+        return res.status(400).json({ success: false, message: line.error });
+      }
+      if (line.stock < item.quantity) {
         return res.status(400).json({
           success: false,
-          message: `Insufficient stock for ${item.name}. Available: ${product.stock}`
+          message: `Insufficient stock for ${item.name}. Available: ${line.stock}`
         });
       }
+
+      lines.push({
+        productId:   item.product,
+        color:       line.color,
+        size:        line.size,
+        quantity:    item.quantity,
+        variantised: line.variantised,
+      });
+
+      orderItems.push({
+        product:  item.product,
+        name:     item.name,
+        image:    line.image,
+        color:    line.color,
+        size:     line.size,
+        quantity: item.quantity,
+        price:    line.unitPrice,
+      });
     }
 
-    // 3. Order items banao — Cart se copy karo
-    const orderItems = cart.items.map(item => ({
-      product:  item.product,
-      name:     item.name,
-      image:    item.image,
-      color:    item.color,
-      size:     item.size,
-      quantity: item.quantity,
-      price:    item.currentProductPrice,
-    }));
-
-    // 4. Order banao
-    const order = new Order({
-      user:            req.user._id,
-      orderItems,
-      shippingAddress,
-      PaymentMethod:   PaymentMethod || 'COD',
-      orderNote:       orderNote || '', // 💡 orderNote passed here to database
-    });
-
-    // 1. Totals calculate karo
-    order.calculateTotals();
-    await order.save();
-
-    // 6. Stock update karo — har product ka
-    for (let item of cart.items) {
-      await Product.findByIdAndUpdate(item.product, {
-        $inc: { stock: -item.quantity }
+    // 3. Stock atomically reserve karo (check aur minus ek hi step mein)
+    const reserved = await reserveStock(lines);
+    if (!reserved.ok) {
+      return res.status(400).json({
+        success: false,
+        message: 'Some items just went out of stock. Please review your cart.'
       });
+    }
+
+    // 4. Order banao. Fail ho to stock wapas karo.
+    let order;
+    try {
+      order = new Order({
+        user:            req.user._id,
+        orderItems,
+        shippingAddress,
+        PaymentMethod:   PaymentMethod || 'COD',
+        orderNote:       orderNote || '',
+      });
+      order.calculateTotals();
+      await order.save();
+    } catch (err) {
+      await releaseStock(lines);
+      throw err;
     }
 
     // 7. Cart clear karo
@@ -156,7 +183,11 @@ async function getAllOrders(req, res) {
 
     const queryObj = {};
     if (req.query.status) {
-      queryObj.orderStatus = req.query.status;
+      const status = String(req.query.status).toLowerCase();
+      if (!STATUSES.includes(status)) {
+        return res.status(400).json({ success: false, message: 'Invalid status filter' });
+      }
+      queryObj.orderStatus = status;
     }
 
     const total  = await Order.countDocuments(queryObj);
@@ -166,9 +197,16 @@ async function getAllOrders(req, res) {
       .skip(skip)
       .limit(limit);
 
-    const totalRevenue = orders.reduce((acc, order) => {
-      return acc + order.totalPrice;
-    }, 0);
+    // Revenue saare matching orders par (sirf is page par nahi), cancelled ke baghair
+    const revenueMatch = { ...queryObj };
+    if (!revenueMatch.orderStatus) revenueMatch.orderStatus = { $ne: 'cancelled' };
+    const revenueAgg = revenueMatch.orderStatus === 'cancelled'
+      ? []
+      : await Order.aggregate([
+          { $match: revenueMatch },
+          { $group: { _id: null, total: { $sum: '$totalPrice' } } },
+        ]);
+    const totalRevenue = revenueAgg[0]?.total || 0;
 
     return res.status(200).json({
       success: true,
@@ -189,13 +227,31 @@ async function getAllOrders(req, res) {
 // ── Update Order Status — Admin Only ──────────
 async function updateOrderStatus(req, res) {
   try {
-    const { status } = req.body;
+    const status = String(req.body.status || '').toLowerCase();
+
+    if (!STATUSES.includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message: `Invalid status. Use one of: ${STATUSES.join(', ')}`
+      });
+    }
 
     const order = await Order.findById(req.params.id);
     if (!order) {
       return res.status(404).json({
         success: false,
         message: 'Order not found'
+      });
+    }
+
+    if (order.orderStatus === status) {
+      return res.status(200).json({ success: true, message: 'Order status unchanged', order });
+    }
+
+    if (order.orderStatus === 'cancelled') {
+      return res.status(400).json({
+        success: false,
+        message: 'Cancelled order cannot be changed'
       });
     }
 
@@ -206,12 +262,8 @@ async function updateOrderStatus(req, res) {
       });
     }
 
-    if (status === 'cancelled' && order.orderStatus !== 'cancelled') {
-      for (let item of order.orderItems) {
-        await Product.findByIdAndUpdate(item.product, {
-          $inc: { stock: +item.quantity }
-        });
-      }
+    if (status === 'cancelled') {
+      await releaseStock(linesFromOrderItems(order.orderItems));
     }
 
     order.UpdateOrderStatus(status);
@@ -256,11 +308,7 @@ async function cancelOrder(req, res) {
       });
     }
 
-    for (let item of order.orderItems) {
-      await Product.findByIdAndUpdate(item.product, {
-        $inc: { stock: +item.quantity }
-      });
-    }
+    await releaseStock(linesFromOrderItems(order.orderItems));
 
     order.UpdateOrderStatus('cancelled');
     await order.save();
