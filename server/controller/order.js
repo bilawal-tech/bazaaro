@@ -152,8 +152,10 @@ async function getSingleOrder(req, res) {
       });
     }
 
+    // order.user null ho sakta hai agar customer ka account delete ho chuka ho
+    const ownerId = order.user?._id?.toString();
     if (
-      order.user._id.toString() !== req.user._id.toString() &&
+      ownerId !== req.user._id.toString() &&
       req.user.role !== 'admin'
     ) {
       return res.status(403).json({

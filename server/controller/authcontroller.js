@@ -1,5 +1,8 @@
-const User = require('../models/User');
-const jwt  = require('jsonwebtoken');
+const mongoose = require('mongoose');
+const User  = require('../models/User');
+const Order = require('../models/Order');
+const Cart  = require('../models/Cart');
+const jwt   = require('jsonwebtoken');
 
 // ── Token Generate ────────────────────────────
 const generateToken = (id) => {
@@ -46,6 +49,19 @@ async function register(req, res) {
       });
     }
   } catch (error) {
+    // Galat email/phone jaisi validation errors 400 hain, server error nahi
+    if (error.name === 'ValidationError') {
+      return res.status(400).json({
+        success: false,
+        message: Object.values(error.errors).map((e) => e.message).join(', ')
+      });
+    }
+    if (error.code === 11000) {
+      return res.status(400).json({
+        success: false,
+        message: 'User already exists'
+      });
+    }
     console.error("❌ BACKEND ERROR:", error);
     return res.status(500).json({
       success: false,
@@ -149,23 +165,50 @@ async function getallUsers(req, res) {
 }
 
 // ── Delete User — Admin Only ──────────────────
+// Orders sales history hain (revenue, analytics), isliye delete nahi hote.
+// Active orders (processing/shipped) hon to delete roka jata hai, warna wo
+// bina customer ke atak jate hain. Cart user ke saath hata di jati hai.
 async function deleteUser(req, res) {
   try {
+    const { id } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid user ID'
+      });
+    }
+
     // Apna account delete nahi kar sakte
-    if (req.params.id === req.user._id.toString()) {
+    if (id === req.user._id.toString()) {
       return res.status(400).json({
         success: false,
         message: 'You cannot delete your own account'
       });
     }
 
-    const user = await User.findByIdAndDelete(req.params.id);
+    const user = await User.findById(id);
     if (!user) {
       return res.status(404).json({
         success: false,
         message: 'User not found'
       });
     }
+
+    const activeOrders = await Order.countDocuments({
+      user: id,
+      orderStatus: { $in: ['processing', 'shipped'] }
+    });
+    if (activeOrders > 0) {
+      return res.status(400).json({
+        success: false,
+        message: `User has ${activeOrders} active order(s). Deliver or cancel them first.`
+      });
+    }
+
+    await Cart.deleteOne({ user: id });
+    await user.deleteOne();
+
     return res.status(200).json({
       success: true,
       message: 'User deleted successfully'

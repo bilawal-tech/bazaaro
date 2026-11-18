@@ -3,7 +3,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { useState, useEffect } from 'react';
 import { FiShoppingCart, FiUser, FiMenu, FiX, FiSearch, FiLayers, FiTag, FiHeart, FiChevronDown, FiShield, FiPackage, FiUsers, FiTrendingUp } from 'react-icons/fi';
 import { selectUser, logout } from '../../redux/slices/authSlice';
-import { selectTotalQuantity } from '../../redux/slices/cartSlice';
+import { selectTotalQuantity, getCart } from '../../redux/slices/cartSlice';
 import { getAllCategories, selectCategories, selectCatLoading } from '../../redux/slices/categorySlice';
 
 function Navbar() {
@@ -22,6 +22,13 @@ function Navbar() {
     dispatch(getAllCategories());
   }, [dispatch]);
 
+  // Login ke baad (ya page refresh par) cart load karo taake badge sahi count dikhaye.
+  // Pehle count sirf /cart page khulne ke baad aata tha.
+  const isLoggedIn = !!user;
+  useEffect(() => {
+    if (isLoggedIn) dispatch(getCart());
+  }, [dispatch, isLoggedIn]);
+
   const handleLogout = () => {
     dispatch(logout());
     navigate('/login');
@@ -29,8 +36,9 @@ function Navbar() {
 
   const handleSearch = (e) => {
     e.preventDefault();
-    if (searchVal.trim()) {
-      navigate(`/shop?search=${searchVal}`);
+    const term = searchVal.trim();
+    if (term) {
+      navigate(`/shop?search=${encodeURIComponent(term)}`);
       setSearchVal('');
     }
   };

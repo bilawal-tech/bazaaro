@@ -22,6 +22,8 @@ import ProductDetailPage from "./pages/shop/ProductDetailPage";
 import CartPage from "./pages/cart/CartPage";
 import CheckoutPage from "./pages/order/CheckoutPage";
 import OrderHistoryPage from "./pages/order/OrderHistoryPage";
+import OrderDetailPage from "./pages/order/OrderDetailPage";
+import ProfilePage from "./pages/auth/ProfilePage";
 import LoginPage from "./pages/auth/LoginPage";
 import RegisterPage from "./pages/auth/RegisterPage";
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -57,6 +59,8 @@ function App() {
                <Route path="/cart" element={<CartPage />} /> 
               <Route path="/checkout" element={<CheckoutPage />} /> 
               <Route path="/orders" element={<OrderHistoryPage />} /> 
+              <Route path="/orders/:id" element={<OrderDetailPage />} />
+              <Route path="/profile" element={<ProfilePage />} />
             </Route>
             {/* ── Protected Routes ────────────── */}
 

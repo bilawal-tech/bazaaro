@@ -19,7 +19,9 @@ import Loader from '../../components/common/Loader';
 function CartPage() {
   const dispatch       = useDispatch();
   const navigate       = useNavigate();
-  const debounceTimer  = useRef(null);
+  // Har item ka apna timer (itemId -> timeout). Ek shared timer hota to do
+  // items jaldi badalne par pehle item ka update cancel ho jata.
+  const debounceTimers = useRef({});
   const items          = useSelector(selectCartItems);
   const totalPrice     = useSelector(selectTotalPrice);
   const totalQuantity  = useSelector(selectTotalQuantity);
@@ -40,8 +42,9 @@ function CartPage() {
 
     dispatch(updateItemLocally({ itemId, quantity: newQty }));
 
-    clearTimeout(debounceTimer.current);
-    debounceTimer.current = setTimeout(() => {
+    clearTimeout(debounceTimers.current[itemId]);
+    debounceTimers.current[itemId] = setTimeout(() => {
+      delete debounceTimers.current[itemId];
       dispatch(updateCartItem({
         itemId,
         updateData: { quantity: newQty },
@@ -51,12 +54,16 @@ function CartPage() {
 
   // single item remove
   const handleRemove = (itemId) => {
+    clearTimeout(debounceTimers.current[itemId]);
+    delete debounceTimers.current[itemId];
     dispatch(removeCartItem(itemId));
     toast.error("Item removed from cart"); 
   };
 
   // clear complete bag
   const handleClearCart = () => {
+    Object.values(debounceTimers.current).forEach(clearTimeout);
+    debounceTimers.current = {};
     dispatch(clearCartAsync());
     toast.success("Cart cleared successfully"); 
   };

@@ -14,7 +14,8 @@ const UserSchema = new mongoose.Schema(
       unique: true,
       lowercase: true,
       trim: true,
-    match: [/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/, 'Please add a valid email']
+    // Purani regex 4+ letter TLD (.store, .info) aur + wale emails reject karti thi
+    match: [/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/, 'Please add a valid email']
     },
     password: {
       type: String,

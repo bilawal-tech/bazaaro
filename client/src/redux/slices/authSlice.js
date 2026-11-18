@@ -57,7 +57,10 @@ export const updateProfile = createAsyncThunk(
   async (userData, { rejectWithValue }) => {
     try {
       const { data } = await API.put('/auth/profile', userData);
-      localStorage.setItem('authUser', JSON.stringify(data));
+      // Server token wapas nahi bhejta. Purana token rakh kar sirf user badlo,
+      // warna save ke baad user logout ho jata hai.
+      const stored = JSON.parse(localStorage.getItem('authUser') || 'null') || {};
+      localStorage.setItem('authUser', JSON.stringify({ ...stored, user: data.user }));
       return data;
     } catch (error) {
       return rejectWithValue(
@@ -146,7 +149,8 @@ const authSlice = createSlice({
       })
       .addCase(getProfile.fulfilled, (state, action) => {
         state.loading = false;
-        state.user    = action.payload.user;
+        // Shape wahi rakho jo login ka hai: { token, user }
+        state.user    = { ...state.user, user: action.payload.user };
       })
       .addCase(getProfile.rejected, (state, action) => {
         state.loading = false;
@@ -163,7 +167,7 @@ const authSlice = createSlice({
       .addCase(updateProfile.fulfilled, (state, action) => {
         state.loading = false;
         state.success = true;
-        state.user    = action.payload.user;
+        state.user    = { ...state.user, user: action.payload.user };
       })
       .addCase(updateProfile.rejected, (state, action) => {
         state.loading = false;

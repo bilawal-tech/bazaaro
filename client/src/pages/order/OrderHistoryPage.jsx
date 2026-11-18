@@ -10,6 +10,7 @@ import {
   selectCurrentPage,
 } from '../../redux/slices/orderSlice';
 import Loader from '../../components/common/Loader';
+import { getImageUrl } from '../../utils/imageUrl';
 
 function OrderHistoryPage() {
   const dispatch    = useDispatch();
@@ -160,7 +161,7 @@ function OrderHistoryPage() {
                       className="flex items-center gap-4 py-1 last:border-0 border-b border-slate-50"
                     >
                       <img
-                        src={item.image || '/placeholder.png'}
+                        src={getImageUrl(item.image)}
                         alt={item.name}
                         className="w-14 h-14 rounded-lg object-cover bg-slate-50 border border-slate-100 flex-shrink-0"
                       />
@@ -168,6 +169,11 @@ function OrderHistoryPage() {
                         <p className="text-slate-800 text-sm font-black truncate">
                           {item.name}
                         </p>
+                        {(item.color || item.size) && (
+                          <p className="text-slate-400 text-[11px] font-bold mt-0.5">
+                            {[item.color, item.size].filter(Boolean).join(' / ')}
+                          </p>
+                        )}
                         <p className="text-slate-400 text-xs font-bold mt-0.5 flex items-center gap-2">
                           <span>Qty: <span className="text-slate-700">{item.quantity}</span></span>
                           <span className="text-slate-200">•</span>
