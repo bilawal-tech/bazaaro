@@ -1,5 +1,7 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import API from '../../services/api';
+import { createOrder } from './orderSlice';
+import { logout } from './authSlice';
 
 // get cart action
 export const getCart = createAsyncThunk(
@@ -187,6 +189,23 @@ const cartSlice = createSlice({
         state.loading = false;
         state.error   = action.payload;
       })
+
+    // Order place hone par server cart khali kar deta hai; yahan bhi state reset
+    // karo warna navbar badge purani quantity dikhata rehta hai.
+    builder
+      .addCase(createOrder.fulfilled, (state) => {
+        state.items         = [];
+        state.totalPrice    = 0;
+        state.totalQuantity = 0;
+        state.error         = null;
+      })
+      // Logout par agle user ko purani cart na dikhe
+      .addCase(logout, (state) => {
+        state.items         = [];
+        state.totalPrice    = 0;
+        state.totalQuantity = 0;
+        state.error         = null;
+      });
 
     // clear cart action
     builder

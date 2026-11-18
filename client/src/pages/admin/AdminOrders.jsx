@@ -99,7 +99,7 @@ function AdminOrders() {
                         {/* Customer profile reference details */}
                         <td className="p-4">
                           <p className="text-slate-900 font-black text-sm tracking-tight">
-                            {order.user?.name || 'Walk-In Customer'}
+                            {order.user?.name || 'Deleted user'}
                           </p>
                           <p className="text-[10px] text-slate-400">{order.user?.email || 'N/A'}</p>
                         </td>

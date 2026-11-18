@@ -37,9 +37,11 @@ function CheckoutPage() {
   });
 
   // ── Empty cart guard ───────────────────────
+  // Order place hone ke baad cart khali hoti hai; us waqt /cart par na bhejo,
+  // success wala effect /orders par le jayega.
   useEffect(() => {
-    if (!items || items.length === 0) navigate('/cart');
-  }, [items, navigate]);
+    if (!success && (!items || items.length === 0)) navigate('/cart');
+  }, [items, success, navigate]);
 
   // ── Order success → Toast show karo aur orders page pr le jao ──
   useEffect(() => {

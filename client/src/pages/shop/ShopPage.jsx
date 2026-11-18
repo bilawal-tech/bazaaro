@@ -38,6 +38,18 @@ function ShopPage() {
     limit:    12,
   });
 
+  // Navbar ki search ya category link se URL badle (jab hum pehle se /shop par hon)
+  // to filters bhi badlein. Pehle filters sirf pehli baar URL se parhe jate the.
+  // (Render ke dauran state adjust karna: React ka recommended tareeqa, effect nahi.)
+  const urlSearch   = searchParams.get('search')   || '';
+  const urlCategory = searchParams.get('category') || '';
+  const urlKey      = `${urlSearch}|${urlCategory}`;
+  const [seenUrlKey, setSeenUrlKey] = useState(urlKey);
+  if (seenUrlKey !== urlKey) {
+    setSeenUrlKey(urlKey);
+    setFilters(prev => ({ ...prev, search: urlSearch, category: urlCategory, page: 1 }));
+  }
+
   // Fetch Products
   useEffect(() => {
     dispatch(getAllProducts(filters));
