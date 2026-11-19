@@ -1,17 +1,13 @@
 import {
-  BrowserRouter as Router,
   Routes,
   Route,
   BrowserRouter,
 } from "react-router-dom";
-import { useSelector } from "react-redux";
 import { Toaster } from 'react-hot-toast';
-import { selectUser } from "./redux/slices/authSlice"; // 👈 Sahi selector import kiya jo authSlice mein maujood hai
 
 //layout components
 import Navbar from "./components/common/Navbar";
 import Footer from "./components/common/Footer";
-import Loader from "./components/common/Loader";
 import Toast from "./components/common/Toast";
 import ScrollToTop from "./components/common/ScrollToTop";
 import ProtectedRoute from "./components/common/ProtectedRoute";
@@ -32,21 +28,20 @@ import AdminProducts from "./pages/admin/AdminProducts";
 import CreateProductPage from "./pages/admin/createProductPage"; 
 import AdminOrders from "./pages/admin/AdminOrders";
 import AdminUsers from "./pages/admin/AdminUsers";
+import NotFoundPage from "./pages/NotFoundPage";
 
 function App() {
-  const user = useSelector(selectUser); 
-  
   return (
     <>
     <Toaster position="top-right" reverseOrder={false} />
       <BrowserRouter>
-        {/* global components */}
+        {/* layout: navbar, toasts */}
         <ScrollToTop />
         <Toast />
         <Navbar />
-        {/* global components */}
+        {/* layout: navbar, toasts */}
 
-        <main className="min-h-screen bg-gray-50">
+        <main className="min-h-screen bg-surface">
           <Routes>
             {/* Public Routes */}
              <Route path="/" element={<HomePage />} />
@@ -82,17 +77,7 @@ function App() {
 
             {/* on error */}
             {/* any undefined url is pass in star * path */}
-            <Route path="*" element={
-            <div className="flex items-center justify-center min-h-screen">
-              <div className="text-center">
-                <h1 className="text-6xl font-bold text-gray-300">404</h1>
-                <p className="text-gray-500 mt-2">Page not found</p>
-                <a href="/" className="text-blue-500 mt-4 block">
-                  Go Home
-                </a>
-              </div>
-            </div>
-          } />
+            <Route path="*" element={<NotFoundPage />} />
 
           </Routes>
         </main>
