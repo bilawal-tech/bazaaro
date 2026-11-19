@@ -1,91 +1,83 @@
 import { Link } from 'react-router-dom';
-import { FiGithub, FiTwitter, FiInstagram, FiMail, FiPhone, FiMapPin } from 'react-icons/fi';
+import { FiInstagram, FiFacebook, FiTwitter, FiMail, FiPhone, FiMapPin } from 'react-icons/fi';
+import Logo from './Logo';
 
-const quickLinks = [
-  { label: 'Home',    path: '/'        },
-  { label: 'Shop',    path: '/shop'    },
-  { label: 'Cart',    path: '/cart'    },
-  { label: 'Orders',  path: '/orders'  },
+const shopLinks = [
+  { label: 'Shop all',    path: '/shop' },
+  { label: 'New Arrivals', path: '/shop?sort=-createdAt' },
+  { label: 'Cart',        path: '/cart' },
+  { label: 'My orders',   path: '/orders' },
 ];
 
+// Social links env se aate hain (client/.env, dekho .env.example).
+// Jo set nahi hota wo dikhai nahi deta, taake nakli ya generic link customers ko na dikhe.
 const socialLinks = [
-  { icon: <FiGithub size={18} />,    href: 'https://github.com'    },
-  { icon: <FiTwitter size={18} />,   href: 'https://twitter.com'    },
-  { icon: <FiInstagram size={18} />, href: 'https://instagram.com' },
-];
+  { label: 'Instagram', icon: <FiInstagram size={18} />, href: import.meta.env.VITE_INSTAGRAM_URL },
+  { label: 'Facebook',  icon: <FiFacebook size={18} />,  href: import.meta.env.VITE_FACEBOOK_URL },
+  { label: 'X',         icon: <FiTwitter size={18} />,   href: import.meta.env.VITE_X_URL },
+].filter((s) => s.href);
 
-// Contact details env se aati hain (client/.env: VITE_SUPPORT_EMAIL, VITE_SUPPORT_PHONE).
-// Jo set nahi hoti wo dikhai nahi jati, taake nakli email/number customers ko na dikhe.
+// Contact details bhi env se (VITE_SUPPORT_EMAIL, VITE_SUPPORT_PHONE).
 const contactInfo = [
-  import.meta.env.VITE_SUPPORT_EMAIL && { icon: <FiMail size={14} />,  text: import.meta.env.VITE_SUPPORT_EMAIL },
-  import.meta.env.VITE_SUPPORT_PHONE && { icon: <FiPhone size={14} />, text: import.meta.env.VITE_SUPPORT_PHONE },
-  { icon: <FiMapPin size={14} />, text: 'Lahore, Pakistan' },
+  import.meta.env.VITE_SUPPORT_EMAIL && { icon: <FiMail size={16} />,  text: import.meta.env.VITE_SUPPORT_EMAIL },
+  import.meta.env.VITE_SUPPORT_PHONE && { icon: <FiPhone size={16} />, text: import.meta.env.VITE_SUPPORT_PHONE },
+  { icon: <FiMapPin size={16} />, text: 'Lahore, Pakistan' },
 ].filter(Boolean);
 
 function Footer() {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="bg-[#1B4332] text-slate-200 mt-auto border-t border-white/10 shadow-2xl">
-      <div className="max-w-7xl mx-auto px-6 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+    <footer className="mt-auto bg-brand-900 text-brand-100">
+      <div className="container-page py-12">
+        <div className="grid grid-cols-1 gap-10 md:grid-cols-3">
 
-          {/* ── Brand Unit ── */}
+          {/* Brand */}
           <div className="space-y-4">
-            <Link to="/" className="text-2xl font-black tracking-tight inline-flex items-center gap-2 select-none">
-              <span className="text-2xl">🛍️</span>
-              <span className="font-extrabold tracking-tight text-white">Bazaaro</span>
-            </Link>
-            <p className="text-sm leading-relaxed text-slate-300 font-medium max-w-sm">
+            <Logo tone="dark" />
+            <p className="max-w-sm text-sm leading-relaxed text-brand-200">
               An online general store for everyday products. Cash on delivery available.
             </p>
 
-            {/* Social Links — Hovering state turns into premium Coral/Orange (#F4A261) */}
-            <div className="flex gap-3 pt-1">
-              {socialLinks.map((social, index) => (
-                <a 
-                  key={index} 
-                  href={social.href} 
-                  target="_blank" 
-                  rel="noreferrer" 
-                  className="w-9 h-9 rounded-xl bg-black/20 border border-white/10 flex items-center justify-center transition duration-300 text-slate-300 hover:text-white hover:bg-[#F4A261] hover:border-[#F4A261] shadow-sm"
-                >
-                  {social.icon}
-                </a>
-              ))}
-            </div>
+            {socialLinks.length > 0 && (
+              <div className="flex gap-2 pt-1">
+                {socialLinks.map((social) => (
+                  <a
+                    key={social.label}
+                    href={social.href}
+                    target="_blank"
+                    rel="noreferrer"
+                    aria-label={social.label}
+                    className="flex h-10 w-10 items-center justify-center rounded-lg border border-white/15 text-brand-100 transition hover:border-accent-400 hover:bg-accent-400 hover:text-brand-950"
+                  >
+                    {social.icon}
+                  </a>
+                ))}
+              </div>
+            )}
           </div>
 
-          {/* Quick Links */}
+          {/* Shop links */}
           <div>
-            <h3 className="text-white font-black text-sm uppercase tracking-wider mb-4 border-l-2 border-[#F4A261] pl-3">
-              Quick Links
-            </h3>
+            <h3 className="mb-4 text-sm font-semibold text-white">Shop</h3>
             <ul className="space-y-2.5">
-              {quickLinks.map((link, index) => (
-                <li key={index}>
-                  <Link 
-                    to={link.path} 
-                    className="text-sm font-bold text-slate-300 hover:text-[#F4A261] hover:translate-x-1.5 transform transition duration-200 inline-block"
-                  >
-                    → {link.label}
+              {shopLinks.map((link) => (
+                <li key={link.label}>
+                  <Link to={link.path} className="text-sm text-brand-200 transition hover:text-white">
+                    {link.label}
                   </Link>
                 </li>
               ))}
             </ul>
           </div>
 
-          {/* Contact Us */}
+          {/* Contact */}
           <div>
-            <h3 className="text-white font-black text-sm uppercase tracking-wider mb-4 border-l-2 border-[#F4A261] pl-3">
-              Contact Us
-            </h3>
-            <ul className="space-y-3.5">
-              {contactInfo.map((info, index) => (
-                <li key={index} className="flex items-center gap-3 text-sm text-slate-300 font-bold">
-                  <span className="text-[#F4A261] p-1.5 bg-black/20 rounded-lg border border-white/5 shadow-inner">
-                    {info.icon}
-                  </span>
+            <h3 className="mb-4 text-sm font-semibold text-white">Contact</h3>
+            <ul className="space-y-3">
+              {contactInfo.map((info) => (
+                <li key={info.text} className="flex items-center gap-3 text-sm text-brand-200">
+                  <span className="text-accent-400">{info.icon}</span>
                   {info.text}
                 </li>
               ))}
@@ -95,11 +87,10 @@ function Footer() {
         </div>
       </div>
 
-      {/* Bottom bar credits styling */}
-      <div className="border-t border-white/10 bg-black/20 text-slate-400">
-        <div className="max-w-7xl mx-auto px-6 py-5 flex flex-col md:flex-row items-center justify-between gap-3">
-          <p className="text-xs font-bold tracking-wide">© {currentYear} Bazaaro — All rights reserved</p>
-          <p className="text-xs font-black text-slate-200 tracking-wide">Built with ❤️ by Bilawal Azeem</p>
+      <div className="border-t border-white/10">
+        <div className="container-page flex flex-col items-center justify-between gap-2 py-5 text-xs text-brand-300 md:flex-row">
+          <p>© {currentYear} Bazaaro. All rights reserved.</p>
+          <p>Built by Bilawal Azeem</p>
         </div>
       </div>
     </footer>

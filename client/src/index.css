@@ -1,3 +1,100 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* ───────────────────────────────────────────────
+   Bazaaro design system — shared styles
+   Pages mein yehi classes use karo (btn, card, input...)
+   taake poori site ek jaisi rahe.
+   ─────────────────────────────────────────────── */
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-white font-sans text-ink antialiased;
+  }
+
+  h1, h2, h3, h4 {
+    @apply text-ink tracking-tight;
+  }
+
+  /* Keyboard se navigate karne wale ko focus nazar aaye */
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-brand-600;
+  }
+}
+
+@layer components {
+  /* Page ki chaudai: har section isi ke andar */
+  .container-page {
+    @apply mx-auto w-full max-w-7xl px-4 sm:px-6;
+  }
+
+  /* ── Buttons ── */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5
+           text-sm font-semibold transition
+           disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .btn-primary {
+    @apply btn bg-brand-800 text-white hover:bg-brand-700 active:bg-brand-900;
+  }
+  .btn-secondary {
+    @apply btn border border-line bg-white text-ink hover:border-brand-700 hover:text-brand-700;
+  }
+  /* Orange sirf khaas action ke liye (hero CTA, sale). Text gehra hara taake parha ja sake. */
+  .btn-accent {
+    @apply btn bg-accent-400 text-brand-950 hover:bg-accent-500;
+  }
+  .btn-ghost {
+    @apply btn text-ink-soft hover:bg-surface hover:text-ink;
+  }
+  .btn-danger {
+    @apply btn bg-red-600 text-white hover:bg-red-700;
+  }
+  .btn-sm { @apply px-3 py-1.5 text-xs; }
+  .btn-lg { @apply px-6 py-3 text-base; }
+
+  /* ── Form fields ── */
+  .label {
+    @apply mb-1.5 block text-sm font-medium text-ink;
+  }
+  .input {
+    @apply w-full rounded-lg border border-line bg-white px-3 py-2.5 text-sm text-ink
+           placeholder:text-ink-faint transition
+           focus:border-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-700/20
+           disabled:bg-surface disabled:text-ink-faint;
+  }
+  .field-error {
+    @apply mt-1 text-xs text-red-600;
+  }
+
+  /* ── Cards ── */
+  .card {
+    @apply rounded-xl border border-line bg-white shadow-card;
+  }
+
+  /* ── Badges ── */
+  .badge {
+    @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium;
+  }
+  .badge-sale    { @apply badge bg-accent-400 text-brand-950; }
+  .badge-success { @apply badge bg-brand-100 text-brand-800; }
+  .badge-warning { @apply badge bg-amber-100 text-amber-800; }
+  .badge-danger  { @apply badge bg-red-100 text-red-700; }
+  .badge-muted   { @apply badge bg-surface text-ink-soft; }
+
+  /* ── Text helpers ── */
+  .page-title {
+    @apply text-2xl font-semibold sm:text-3xl;
+  }
+  .section-title {
+    @apply text-xl font-semibold sm:text-2xl;
+  }
+  .link {
+    @apply font-medium text-brand-700 underline-offset-4 hover:text-brand-800 hover:underline;
+  }
+}
