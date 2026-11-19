@@ -7,14 +7,66 @@ const {
   releaseStock,
   linesFromOrderItems,
 } = require('../utils/variants');
+const { parsePagination } = require('../utils/query');
 
 const STATUSES = ['processing', 'shipped', 'delivered', 'cancelled'];
+
+const PAYMENT_METHODS = Order.schema.path('PaymentMethod').enumValues;
+
+// Shipping address: sab fields string hon, trim hon, aur sahi length/format ke hon.
+// Client par bharose nahi, is liye server par bhi check.
+function validateShipping(input) {
+  if (!input || typeof input !== 'object' || Array.isArray(input)) {
+    return { error: 'Shipping address is required' };
+  }
+
+  const clean = {};
+  for (const field of ['fullName', 'phone', 'street', 'city', 'zip']) {
+    const value = input[field];
+    if (value !== undefined && value !== null && typeof value !== 'string') {
+      return { error: `Invalid ${field}` };
+    }
+    clean[field] = (value || '').trim();
+  }
+
+  if (clean.fullName.length < 2 || clean.fullName.length > 80) {
+    return { error: 'Full name must be 2 to 80 characters' };
+  }
+  const phoneDigits = clean.phone.replace(/\D/g, '');
+  if (!/^\+?[0-9][0-9\s-]*$/.test(clean.phone) || phoneDigits.length < 7 || phoneDigits.length > 15) {
+    return { error: 'Please enter a valid phone number' };
+  }
+  if (clean.street.length < 5 || clean.street.length > 200) {
+    return { error: 'Street address must be 5 to 200 characters' };
+  }
+  if (clean.city.length < 2 || clean.city.length > 80) {
+    return { error: 'City must be 2 to 80 characters' };
+  }
+  if (clean.zip.length > 12) {
+    return { error: 'Zip code is too long' };
+  }
+
+  return { value: clean };
+}
 
 // ── Create Order ──────────────────────────────
 async function createOrder(req, res) {
   try {
     // 💡 orderNote added in destructuring
-    const { shippingAddress, PaymentMethod, orderNote } = req.body;
+    const { PaymentMethod, orderNote } = req.body;
+
+    const shipping = validateShipping(req.body.shippingAddress);
+    if (shipping.error) {
+      return res.status(400).json({ success: false, message: shipping.error });
+    }
+    const shippingAddress = shipping.value;
+
+    if (PaymentMethod !== undefined && !PAYMENT_METHODS.includes(PaymentMethod)) {
+      return res.status(400).json({ success: false, message: 'Invalid payment method' });
+    }
+    if (orderNote !== undefined && (typeof orderNote !== 'string' || orderNote.length > 500)) {
+      return res.status(400).json({ success: false, message: 'Order note must be text up to 500 characters' });
+    }
 
     // 1. Cart lo
     const cart = await Cart.findOne({ user: req.user._id });
@@ -114,9 +166,7 @@ async function createOrder(req, res) {
 // ── Get My Orders ─────────────────────────────
 async function getMyOrders(req, res) {
   try {
-    const page  = Number(req.query.page)  || 1;
-    const limit = Number(req.query.limit) || 10;
-    const skip  = (page - 1) * limit;
+    const { page, limit, skip } = parsePagination(req.query);
 
     const total  = await Order.countDocuments({ user: req.user._id });
     const orders = await Order.find({ user: req.user._id })
@@ -179,9 +229,7 @@ async function getSingleOrder(req, res) {
 // ── Get All Orders — Admin Only ───────────────
 async function getAllOrders(req, res) {
   try {
-    const page  = Number(req.query.page)  || 1;
-    const limit = Number(req.query.limit) || 10;
-    const skip  = (page - 1) * limit;
+    const { page, limit, skip } = parsePagination(req.query);
 
     const queryObj = {};
     if (req.query.status) {

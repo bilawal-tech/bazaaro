@@ -3,11 +3,13 @@ const User  = require('../models/User');
 const Order = require('../models/Order');
 const Cart  = require('../models/Cart');
 const jwt   = require('jsonwebtoken');
+const { parsePagination } = require('../utils/query');
 
 // ── Token Generate ────────────────────────────
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
-    expiresIn: '30d',
+    // Env se badla ja sakta hai; default 7 din (pehle 30 din tha)
+    expiresIn: process.env.JWT_EXPIRES_IN || '7d',
   });
 };
 
@@ -15,6 +17,14 @@ const generateToken = (id) => {
 async function register(req, res) {
   try {
     const { name, email, password, address, phone, avatar } = req.body;
+
+    // email/password string hi hon (object aaye to query operator ban sakta hai)
+    if (typeof email !== 'string' || typeof password !== 'string') {
+      return res.status(400).json({
+        success: false,
+        message: 'Email and password are required'
+      });
+    }
 
     const userExist = await User.findOne({ email });
     if (userExist) {
@@ -74,6 +84,13 @@ async function register(req, res) {
 async function login(req, res) {
   try {
     const { email, password } = req.body;
+
+    if (typeof email !== 'string' || typeof password !== 'string') {
+      return res.status(400).json({
+        success: false,
+        message: 'Email and password are required'
+      });
+    }
 
     const user = await User.findOne({ email }).select('+password');
 
@@ -139,9 +156,7 @@ async function getProfile(req, res) {
 async function getallUsers(req, res) {
   try {
     // Pagination — DSA: Array slicing O(limit)
-    const page     = Number(req.query.page)  || 1;
-    const limit    = Number(req.query.limit) || 10;
-    const skip     = (page - 1) * limit;
+    const { page, limit, skip } = parsePagination(req.query);
     const total    = await User.countDocuments();
 
     const allUsers = await User.find({})

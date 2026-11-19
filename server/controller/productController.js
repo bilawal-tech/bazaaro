@@ -3,30 +3,53 @@ const Product = require('../models/Product');
 const Category = require('../models/Category');
 const multer = require('multer');
 const path = require('path');
+const fs = require('fs');
 const { buildVariants } = require('../utils/variants');
+const { escapeRegex, parsePagination, asString } = require('../utils/query');
 
-// ── Multer Storage Configuration (Accepts ALL image types) ───
+// ── Multer Storage Configuration ───
+// Absolute path: server kisi bhi folder se start ho, files server/uploads/products
+// mein hi jayengi. Folder na ho to bana do (uploads git mein nahi hai).
+const UPLOAD_DIR = path.join(__dirname, '..', 'uploads', 'products');
+fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+
+// Sirf ye image types. Extension client ke filename se nahi, mimetype se aata hai.
+// SVG jaan-boojh kar nahi: us mein script ho sakti hai.
+const ALLOWED_IMAGE_TYPES = {
+  'image/jpeg': '.jpg',
+  'image/png':  '.png',
+  'image/webp': '.webp',
+  'image/avif': '.avif',
+  'image/gif':  '.gif',
+};
+
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, 'uploads/products/'); 
+    cb(null, UPLOAD_DIR);
   },
   filename: function (req, file, cb) {
+    // fieldname client bhejta hai ("../../x" ho sakta hai), is liye saaf karo
+    // warna file upload folder se bahar likhi ja sakti hai (path traversal).
+    const safeField = file.fieldname.replace(/[^a-zA-Z0-9_-]/g, '');
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-    cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
+    cb(null, safeField + '-' + uniqueSuffix + ALLOWED_IMAGE_TYPES[file.mimetype]);
   }
 });
 
-// Wildcard content-type checks any incoming image file extension
 const upload = multer({
   storage: storage,
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5MB per image
+    files: 40,
+  },
   fileFilter: function (req, file, cb) {
-    if (file.mimetype.startsWith('image/')) {
+    if (ALLOWED_IMAGE_TYPES[file.mimetype]) {
       cb(null, true);
     } else {
-      cb(new Error('Only image assets are allowed system-wide!'), false);
+      cb(new Error('Only JPG, PNG, WEBP, AVIF or GIF images are allowed'), false);
     }
   }
-})
+});
 
 async function createProduct(req, res) {
   try {
@@ -144,16 +167,23 @@ async function getAllProducts(req, res) {
     // ── Filters ───────────────────────────────
     const queryObj = {};
 
-    // Category filter:
+    // Category filter: sirf valid ObjectId string (?category[$ne]=x jaisi cheez nahi)
+    const category = asString(req.query.category);
     if (req.query.category) {
-      queryObj.category = req.query.category;
+      if (!mongoose.Types.ObjectId.isValid(category)) {
+        return res.status(400).json({ success: false, message: 'Invalid category' });
+      }
+      queryObj.category = category;
     }
 
-    // Price filter :
-    if (req.query.minprice || req.query.maxprice) {
+    // Price filter: sirf finite numbers
+    const minPrice = Number(asString(req.query.minprice));
+    const maxPrice = Number(asString(req.query.maxprice));
+    if ((req.query.minprice && Number.isFinite(minPrice)) ||
+        (req.query.maxprice && Number.isFinite(maxPrice))) {
       queryObj.price = {};
-      if (req.query.minprice) queryObj.price.$gte = Number(req.query.minprice);
-      if (req.query.maxprice) queryObj.price.$lte = Number(req.query.maxprice);
+      if (req.query.minprice && Number.isFinite(minPrice)) queryObj.price.$gte = minPrice;
+      if (req.query.maxprice && Number.isFinite(maxPrice)) queryObj.price.$lte = maxPrice;
     }
 
     // Stock filter:
@@ -161,10 +191,11 @@ async function getAllProducts(req, res) {
       queryObj.stock = { $gt: 0 };
     }
 
-    // Search — name se:
-    if (req.query.search) {
+    // Search — name se. User ki string regex banne se pehle escape hoti hai.
+    const search = asString(req.query.search).trim().slice(0, 100);
+    if (search) {
       queryObj.name = {
-        $regex:   req.query.search,
+        $regex:   escapeRegex(search),
         $options: 'i', // case insensitive
       };
     }
@@ -186,9 +217,7 @@ async function getAllProducts(req, res) {
     }
 
     // ── Pagination ────────────────────────────
-    const page  = Number(req.query.page)  || 1;
-    const limit = Number(req.query.limit) || 10;
-    const skip  = (page - 1) * limit;
+    const { page, limit, skip } = parsePagination(req.query, { defaultLimit: 10, maxLimit: 100 });
 
     // ── Query Execute ─────────────────────────
     const total    = await Product.countDocuments(queryObj);
