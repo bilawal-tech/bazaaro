@@ -5,6 +5,7 @@ import {
   getAllProducts,
   selectProducts,
   selectLoading,
+  selectTotalProducts,
 } from '../../redux/slices/productSlice';
 import ProductCard from '../../components/products/ProductCard';
 import Loader from '../../components/common/Loader';
@@ -13,6 +14,7 @@ function HomePage() {
   const dispatch  = useDispatch();
   const products  = useSelector(selectProducts);
   const loading   = useSelector(selectLoading);
+  const totalProducts = useSelector(selectTotalProducts);
 
   // Hook Initialization
   useEffect(() => {
@@ -37,8 +39,8 @@ function HomePage() {
               Shop Premium <span className="text-[#F4A261]">Products</span> Online
             </h1>
             <p className="text-slate-200 text-base mb-8 font-medium">
-              Pakistan ka best ecommerce store. <br />
-              Quality products — fast delivery.
+              Everyday products from one online store. <br />
+              Cash on delivery available.
             </p>
             <div className="flex gap-4 flex-wrap">
               <Link to="/shop" className="bg-[#F4A261] hover:bg-white text-white hover:text-[#1B4332] font-black px-8 py-3.5 rounded-xl transition duration-300 shadow-lg active:scale-[0.98] uppercase text-xs tracking-wider">
@@ -52,20 +54,20 @@ function HomePage() {
         </div>
       </section>
 
-      {/* Stats Bar — Clean background matching #1B4332 */}
+      {/* Info Bar — sirf wo baatein jo store mein sach mein hain:
+          product count database se aata hai, delivery rule Order model se (1000 se upar free),
+          COD checkout par available hai. */}
       <section className="py-8 bg-[#1B4332] border-b border-white/5 relative z-20">
         <div className="max-w-7xl mx-auto px-4">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
-            
-            {/* Stats Array Map Logic */}
+          <div className="grid grid-cols-3 gap-6 text-center">
+
             {[
-              { number: '10K+', label: 'Products' },
-              { number: '50K+', label: 'Customers' },
-              { number: '99%', label: 'Satisfied' },
-              { number: '24/7', label: 'Support' },
-            ].map((stat, index) => (
+              totalProducts > 0 && { number: String(totalProducts), label: 'Products in Store' },
+              { number: 'Rs. 1,000+', label: 'Orders Ship Free' },
+              { number: 'COD', label: 'Cash on Delivery' },
+            ].filter(Boolean).map((stat, index) => (
               <div key={index} className="border-r border-white/5 last:border-none">
-                <p className="text-[#95D5B2] text-3xl font-black tracking-tight">
+                <p className="text-[#95D5B2] text-2xl md:text-3xl font-black tracking-tight">
                   {stat.number}
                 </p>
                 <p className="text-slate-300 text-xs uppercase tracking-wider font-bold mt-1">
@@ -73,7 +75,7 @@ function HomePage() {
                 </p>
               </div>
             ))}
-            
+
           </div>
         </div>
       </section>
@@ -115,16 +117,16 @@ function HomePage() {
           <div className="bg-gradient-to-br from-[#1B4332] via-[#2D6A4F] to-[#1B4332] rounded-2xl p-10 md:p-14 text-center relative overflow-hidden shadow-xl">
             <div className="absolute w-[300px] h-[300px] bg-[#95D5B2]/5 rounded-full blur-[80px] -bottom-20 -right-20 pointer-events-none"></div>
             <span className="inline-block bg-[#F4A261] text-white text-xs font-black px-3 py-1 rounded-full mb-4 uppercase tracking-wider shadow-sm">
-              Special Offer
+              Free Delivery
             </span>
             <h2 className="text-white text-3xl md:text-4xl font-black tracking-tight mb-3">
-              Get 20% Off Your First Order
+              Free Delivery on Orders Over Rs. 1,000
             </h2>
             <p className="text-slate-200 font-medium mb-8">
-              Use core activation code: <span className="text-[#F4A261] font-black underline underline-offset-4">WELCOME20</span>
+              Create an account to place orders and track them from your profile.
             </p>
             <Link to="/register" className="inline-block bg-[#F4A261] hover:bg-white text-white hover:text-[#1B4332] font-black px-10 py-3.5 rounded-xl transition duration-300 shadow-md active:scale-[0.98] uppercase text-xs tracking-wider">
-              Join Now & Save
+              Create Account
             </Link>
           </div>
         </div>

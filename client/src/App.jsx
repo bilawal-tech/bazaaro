@@ -13,6 +13,7 @@ import Navbar from "./components/common/Navbar";
 import Footer from "./components/common/Footer";
 import Loader from "./components/common/Loader";
 import Toast from "./components/common/Toast";
+import ScrollToTop from "./components/common/ScrollToTop";
 import ProtectedRoute from "./components/common/ProtectedRoute";
 
 //pages
@@ -40,6 +41,7 @@ function App() {
     <Toaster position="top-right" reverseOrder={false} />
       <BrowserRouter>
         {/* global components */}
+        <ScrollToTop />
         <Toast />
         <Navbar />
         {/* global components */}
