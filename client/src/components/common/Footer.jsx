@@ -14,11 +14,13 @@ const socialLinks = [
   { icon: <FiInstagram size={18} />, href: 'https://instagram.com' },
 ];
 
+// Contact details env se aati hain (client/.env: VITE_SUPPORT_EMAIL, VITE_SUPPORT_PHONE).
+// Jo set nahi hoti wo dikhai nahi jati, taake nakli email/number customers ko na dikhe.
 const contactInfo = [
-  { icon: <FiMail size={14} />,   text: 'support@zillionmall.com' },
-  { icon: <FiPhone size={14} />,  text: '+92 300 1234567'      },
-  { icon: <FiMapPin size={14} />, text: 'Lahore, Pakistan'     },
-];
+  import.meta.env.VITE_SUPPORT_EMAIL && { icon: <FiMail size={14} />,  text: import.meta.env.VITE_SUPPORT_EMAIL },
+  import.meta.env.VITE_SUPPORT_PHONE && { icon: <FiPhone size={14} />, text: import.meta.env.VITE_SUPPORT_PHONE },
+  { icon: <FiMapPin size={14} />, text: 'Lahore, Pakistan' },
+].filter(Boolean);
 
 function Footer() {
   const currentYear = new Date().getFullYear();
@@ -35,7 +37,7 @@ function Footer() {
               <span className="font-extrabold tracking-tight text-white">Bazaaro</span>
             </Link>
             <p className="text-sm leading-relaxed text-slate-300 font-medium max-w-sm">
-              Pakistan ka best online ecommerce store. Quality products — fast delivery.
+              An online general store for everyday products. Cash on delivery available.
             </p>
 
             {/* Social Links — Hovering state turns into premium Coral/Orange (#F4A261) */}
