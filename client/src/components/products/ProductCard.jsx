@@ -1,139 +1,109 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
+import { FiStar } from 'react-icons/fi';
 import { addToCart } from '../../redux/slices/cartSlice';
+import { getImageUrl } from '../../utils/imageUrl';
 
 function ProductCard({ product }) {
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  // base url
-  const BACKEND_URL = "http://localhost:5000"; 
-
-  // variants wale product mein color/size chuni jati hai, is liye detail page par bhejo
+  // Variants wale product mein color/size chuni jati hai, is liye detail page par bhejo
   const variantList = product.variants || [];
   const hasVariants = variantList.length > 0;
   const sizeCount = variantList.reduce((n, v) => n + (v.sizes?.length || 0), 0);
   const showFrom = sizeCount > 1;
 
-  // add to cart
   const handleAddToCart = () => {
     if (hasVariants) {
       navigate(`/product/${product._id}`);
       return;
     }
-    dispatch(addToCart({
-      productId: product._id,
-      quantity:  1,
-    }));
+    dispatch(addToCart({ productId: product._id, quantity: 1 }));
   };
 
-  // discount calc
-  const hasDiscount = product.discountPrice > 0;
+  // Discount
+  const hasDiscount = product.discountPrice > 0 && product.discountPrice < product.price;
   const displayPrice = hasDiscount ? product.discountPrice : product.price;
+  const discountPercent = hasDiscount
+    ? Math.round(((product.price - product.discountPrice) / product.price) * 100)
+    : 0;
 
-  // image handle
-  const getProductImage = () => {
-    const firstImage =
-      product.images?.[0] ||
-      variantList.find(v => v.image)?.image ||
-      variantList.flatMap(v => v.sizes || []).find(s => s.image)?.image;
+  // Image: product ki, warna pehle variant ki
+  const firstImage =
+    product.images?.[0] ||
+    variantList.find((v) => v.image)?.image ||
+    variantList.flatMap((v) => v.sizes || []).find((s) => s.image)?.image;
 
-    if (!firstImage) {
-      return '/placeholder.png';
-    }
-    
-    // safe string extract
-    // agar image object hai toh uski url/path property nikalega, warna khud string hoga
-    const imageStr = typeof firstImage === 'object' 
-      ? (firstImage.url || firstImage.path || '') 
-      : firstImage;
-
-    if (!imageStr) return '/placeholder.png';
-
-    if (imageStr.startsWith('http')) {
-      return imageStr;
-    }
-    const cleanPath = imageStr.startsWith('/') ? imageStr : `/${imageStr}`;
-    return `${BACKEND_URL}${cleanPath}`;
-  };
+  const outOfStock = product.stock === 0;
+  const hasReviews = (product.numReviews || 0) > 0;
 
   return (
-    <div className="bg-white rounded-2xl overflow-hidden border border-slate-100 hover:border-slate-200 hover:shadow-xl transition-all duration-300 group flex flex-col justify-between">
+    <div className="card group flex flex-col overflow-hidden transition hover:shadow-pop">
 
-      {/* image area */}
-      <Link to={`/product/${product._id}`}>
-        <div className="relative overflow-hidden bg-slate-50 h-52 flex items-center justify-center">
-          <img
-            src={getProductImage()}
-            alt={product.name}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-            onError={(e) => {
-              e.target.onerror = null; 
-              e.target.src = '/placeholder.png';
-            }}
-          />
+      {/* Image */}
+      <Link to={`/product/${product._id}`} className="relative block aspect-square overflow-hidden bg-surface">
+        <img
+          src={getImageUrl(firstImage)}
+          alt={product.name}
+          loading="lazy"
+          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+          onError={(e) => {
+            e.target.onerror = null;
+            e.target.src = '/placeholder.png';
+          }}
+        />
 
-          {/* discount badge */}
-          {hasDiscount && (
-            <span className="absolute top-3 left-3 bg-[#F4A261] text-white text-[10px] font-black px-2.5 py-1 rounded-full uppercase tracking-wider shadow-sm">
-              SAVE Rs. {(product.price - product.discountPrice).toLocaleString()}
-            </span>
-          )}
+        {hasDiscount && (
+          <span className="badge-sale absolute left-3 top-3 shadow-sm">-{discountPercent}%</span>
+        )}
 
-          {/* stock check */}
-          {product.stock === 0 && (
-            <div className="absolute inset-0 bg-[#1B4332]/80 backdrop-blur-[2px] flex items-center justify-center">
-              <span className="text-white font-black text-xs uppercase tracking-widest bg-white/10 px-4 py-1.5 rounded-full border border-white/20">
-                Out of Stock
-              </span>
-            </div>
-          )}
-        </div>
+        {outOfStock && (
+          <div className="absolute inset-0 flex items-center justify-center bg-white/70">
+            <span className="badge bg-ink text-white">Out of stock</span>
+          </div>
+        )}
       </Link>
 
-      {/* product info */}
-      <div className="p-5 flex-1 flex flex-col justify-between">
-        <div>
-          {/* title */}
-          <Link to={`/product/${product._id}`}>
-            <h3 className="text-[#1B4332] font-bold text-sm mb-1.5 hover:text-[#2D6A4F] transition line-clamp-2 min-h-[40px] leading-snug">
-              {product.name}
-            </h3>
-          </Link>
+      {/* Info */}
+      <div className="flex flex-1 flex-col p-4">
+        <Link to={`/product/${product._id}`}>
+          <h3 className="line-clamp-2 min-h-[2.5rem] text-sm font-medium leading-snug text-ink transition hover:text-brand-700">
+            {product.name}
+          </h3>
+        </Link>
 
-          {/* rating */}
-          <div className="flex items-center gap-1.5 mb-3">
-            <span className="text-amber-400 text-xs">★</span>
-            <span className="text-slate-500 text-xs font-bold">
-              {product.ratings || 0} <span className="text-slate-300 font-normal">({product.numReviews || 0})</span>
-            </span>
+        {/* Rating sirf tab jab reviews hon, warna "0 (0)" ajeeb lagta hai */}
+        {hasReviews && (
+          <div className="mt-1.5 flex items-center gap-1 text-xs text-ink-soft">
+            <FiStar size={13} className="fill-accent-400 text-accent-400" aria-hidden="true" />
+            <span className="font-medium text-ink">{product.ratings}</span>
+            <span>({product.numReviews})</span>
           </div>
-        </div>
+        )}
 
-        <div>
-          {/* price */}
-          <div className="flex items-baseline gap-2 mb-4">
-            <span className="text-[#1B4332] text-lg font-black tracking-tight">
-              {showFrom && <span className="text-slate-400 text-xs font-bold mr-1">From</span>}
+        <div className="mt-auto pt-3">
+          <div className="mb-3 flex flex-wrap items-baseline gap-x-2">
+            <span className="text-lg font-semibold text-ink">
+              {showFrom && <span className="mr-1 text-xs font-normal text-ink-faint">From</span>}
               Rs. {displayPrice?.toLocaleString()}
             </span>
             {hasDiscount && (
-              <span className="text-slate-400 text-xs line-through font-medium">
+              <span className="text-sm text-ink-faint line-through">
                 Rs. {product.price?.toLocaleString()}
               </span>
             )}
           </div>
 
-          {/* action btn */}
           <button
+            type="button"
             onClick={handleAddToCart}
-            disabled={product.stock === 0}
-            className="w-full py-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-300 bg-[#1B4332] text-white hover:bg-[#F4A261] disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed active:scale-[0.98] shadow-sm"
+            disabled={outOfStock}
+            className="btn-primary w-full"
           >
-            {product.stock === 0 ? 'Unavailable' : hasVariants ? 'Select Options' : 'Add to Cart'}
+            {outOfStock ? 'Unavailable' : hasVariants ? 'Select options' : 'Add to cart'}
           </button>
         </div>
-
       </div>
     </div>
   );
