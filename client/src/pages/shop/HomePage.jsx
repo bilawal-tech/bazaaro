@@ -1,137 +1,135 @@
 import { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
+import { FiTruck, FiDollarSign, FiPackage, FiArrowRight } from 'react-icons/fi';
 import {
   getAllProducts,
   selectProducts,
   selectLoading,
   selectTotalProducts,
 } from '../../redux/slices/productSlice';
+import { selectCategories } from '../../redux/slices/categorySlice';
+import { selectUser } from '../../redux/slices/authSlice';
 import ProductCard from '../../components/products/ProductCard';
 import Loader from '../../components/common/Loader';
 
 function HomePage() {
-  const dispatch  = useDispatch();
-  const products  = useSelector(selectProducts);
-  const loading   = useSelector(selectLoading);
+  const dispatch      = useDispatch();
+  const products      = useSelector(selectProducts);
+  const loading       = useSelector(selectLoading);
   const totalProducts = useSelector(selectTotalProducts);
+  const categories    = useSelector(selectCategories);
+  const user          = useSelector(selectUser);
 
-  // Hook Initialization
   useEffect(() => {
     dispatch(getAllProducts({ limit: 8 }));
   }, [dispatch]);
 
-  // Loading Check
   if (loading) return <Loader />;
 
+  // Sirf wo baatein jo store mein sach mein hain:
+  // product count database se, delivery rule Order model se (1000 se upar free), COD checkout par.
+  const highlights = [
+    { icon: <FiTruck size={20} />,      title: 'Free delivery',    text: 'On orders over Rs. 1,000' },
+    { icon: <FiDollarSign size={20} />, title: 'Cash on delivery', text: 'Pay when your order arrives' },
+    totalProducts > 0 && {
+      icon: <FiPackage size={20} />,
+      title: `${totalProducts} products`,
+      text: 'In the store right now',
+    },
+  ].filter(Boolean);
+
   return (
-    <div className="min-h-screen bg-white text-[#1B4332]">
+    <div className="bg-white">
 
-      {/* Hero Section — Transitioned to #1B4332 & #2D6A4F with #F4A261 Accents */}
-      <section className="relative min-h-[500px] flex items-center bg-gradient-to-br from-[#1B4332] via-[#2D6A4F] to-[#1B4332] overflow-hidden">
-        <div className="absolute w-[500px] h-[500px] bg-[#95D5B2]/10 rounded-full blur-[120px] -top-20 -left-20 pointer-events-none"></div>
-        <div className="max-w-7xl mx-auto px-4 py-20 relative z-10">
-          <div className="max-w-xl">
-            <span className="inline-block bg-[#F4A261] text-white text-xs font-black px-3 py-1 rounded-full mb-4 uppercase tracking-wide shadow-sm">
-              New Arrivals 2026
-            </span>
-            <h1 className="text-4xl md:text-5xl font-black text-white leading-tight mb-4 tracking-tight">
-              Shop Premium <span className="text-[#F4A261]">Products</span> Online
+      {/* Hero */}
+      <section className="bg-brand-50">
+        <div className="container-page grid items-center gap-10 py-14 lg:grid-cols-2 lg:py-20">
+          <div>
+            <h1 className="text-4xl font-bold leading-tight text-brand-900 sm:text-5xl">
+              Everyday products, <span className="text-brand-700">one store</span>
             </h1>
-            <p className="text-slate-200 text-base mb-8 font-medium">
-              Everyday products from one online store. <br />
-              Cash on delivery available.
+            <p className="mt-4 max-w-lg text-lg text-ink-soft">
+              Home, electronics, clothing and more. Order online and pay when it arrives.
             </p>
-            <div className="flex gap-4 flex-wrap">
-              <Link to="/shop" className="bg-[#F4A261] hover:bg-white text-white hover:text-[#1B4332] font-black px-8 py-3.5 rounded-xl transition duration-300 shadow-lg active:scale-[0.98] uppercase text-xs tracking-wider">
-                Shop Now
-              </Link>
-              <Link to="/shop" className="border border-white/20 text-white hover:bg-white/10 font-bold px-8 py-3.5 rounded-xl transition duration-300 text-xs uppercase tracking-wider">
-                Browse Categories
-              </Link>
+            <div className="mt-8 flex flex-wrap gap-3">
+              <Link to="/shop" className="btn-primary btn-lg">Shop now</Link>
+              <Link to="/shop?sort=-createdAt" className="btn-secondary btn-lg">New arrivals</Link>
             </div>
           </div>
-        </div>
-      </section>
 
-      {/* Info Bar — sirf wo baatein jo store mein sach mein hain:
-          product count database se aata hai, delivery rule Order model se (1000 se upar free),
-          COD checkout par available hai. */}
-      <section className="py-8 bg-[#1B4332] border-b border-white/5 relative z-20">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="grid grid-cols-3 gap-6 text-center">
-
-            {[
-              totalProducts > 0 && { number: String(totalProducts), label: 'Products in Store' },
-              { number: 'Rs. 1,000+', label: 'Orders Ship Free' },
-              { number: 'COD', label: 'Cash on Delivery' },
-            ].filter(Boolean).map((stat, index) => (
-              <div key={index} className="border-r border-white/5 last:border-none">
-                <p className="text-[#95D5B2] text-2xl md:text-3xl font-black tracking-tight">
-                  {stat.number}
-                </p>
-                <p className="text-slate-300 text-xs uppercase tracking-wider font-bold mt-1">
-                  {stat.label}
-                </p>
-              </div>
+          <ul className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
+            {highlights.map((h) => (
+              <li key={h.title} className="card flex items-center gap-4 p-4">
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-brand-100 text-brand-800">
+                  {h.icon}
+                </span>
+                <div>
+                  <p className="font-semibold text-ink">{h.title}</p>
+                  <p className="text-sm text-ink-soft">{h.text}</p>
+                </div>
+              </li>
             ))}
-
-          </div>
+          </ul>
         </div>
       </section>
 
-      {/* Featured Products */}
-      <section className="py-20 bg-white">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="flex items-end justify-between mb-10 border-b border-slate-100 pb-5">
+      {/* Categories */}
+      {categories && categories.length > 0 && (
+        <section className="container-page pt-14">
+          <h2 className="section-title mb-5">Shop by category</h2>
+          <div className="flex flex-wrap gap-2.5">
+            {categories.map((cat) => (
+              <Link
+                key={cat._id}
+                to={`/shop?category=${cat._id}`}
+                className="rounded-full border border-line bg-white px-5 py-2.5 text-sm font-medium text-ink transition hover:border-brand-700 hover:bg-brand-50 hover:text-brand-800"
+              >
+                {cat.name}
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Featured products */}
+      <section className="container-page py-14">
+        <div className="mb-6 flex items-end justify-between gap-4">
+          <div>
+            <h2 className="section-title">Featured products</h2>
+            <p className="mt-1 text-sm text-ink-soft">Latest additions to the store</p>
+          </div>
+          <Link to="/shop" className="link flex shrink-0 items-center gap-1 text-sm">
+            View all <FiArrowRight size={16} />
+          </Link>
+        </div>
+
+        {products && products.length > 0 ? (
+          <div className="grid grid-cols-2 gap-3 sm:gap-5 md:grid-cols-3 lg:grid-cols-4">
+            {products.map((product) => (
+              <ProductCard key={product._id} product={product} />
+            ))}
+          </div>
+        ) : (
+          <div className="rounded-xl border border-line bg-surface py-16 text-center">
+            <p className="font-medium text-ink">No products yet</p>
+            <p className="mt-1 text-sm text-ink-soft">Check back soon.</p>
+          </div>
+        )}
+      </section>
+
+      {/* Sign-up banner: sirf unko jinhon ne account nahi banaya */}
+      {!user && (
+        <section className="container-page pb-16">
+          <div className="flex flex-col items-start justify-between gap-6 rounded-2xl bg-brand-800 p-8 sm:flex-row sm:items-center md:p-10">
             <div>
-              <h2 className="text-[#1B4332] text-3xl font-black tracking-tight">Featured Products</h2>
-              <p className="text-slate-500 text-sm mt-1 font-medium">Top picked premium products for you</p>
+              <h2 className="text-2xl font-semibold text-white">Create an account to place orders</h2>
+              <p className="mt-2 text-brand-200">Track every order from your profile.</p>
             </div>
-            <Link to="/shop" className="text-[#2D6A4F] font-bold text-sm hover:text-[#1B4332] hover:underline underline-offset-4 transition">
-              View All Products →
-            </Link>
+            <Link to="/register" className="btn-accent btn-lg shrink-0">Create account</Link>
           </div>
-
-          {/* Featured Products Grid Logic */}
-          {products && products.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-              {products.map((product) => (
-                <ProductCard key={product._id} product={product} />
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-20 bg-slate-50 rounded-2xl border border-slate-100">
-              <p className="text-slate-500 font-medium">
-                No products found in the catalog
-              </p>
-            </div>
-          )}
-
-        </div>
-      </section>
-
-      {/* Promo Banner — Matching the primary header card structure */}
-      <section className="py-12 bg-white border-t border-slate-100">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="bg-gradient-to-br from-[#1B4332] via-[#2D6A4F] to-[#1B4332] rounded-2xl p-10 md:p-14 text-center relative overflow-hidden shadow-xl">
-            <div className="absolute w-[300px] h-[300px] bg-[#95D5B2]/5 rounded-full blur-[80px] -bottom-20 -right-20 pointer-events-none"></div>
-            <span className="inline-block bg-[#F4A261] text-white text-xs font-black px-3 py-1 rounded-full mb-4 uppercase tracking-wider shadow-sm">
-              Free Delivery
-            </span>
-            <h2 className="text-white text-3xl md:text-4xl font-black tracking-tight mb-3">
-              Free Delivery on Orders Over Rs. 1,000
-            </h2>
-            <p className="text-slate-200 font-medium mb-8">
-              Create an account to place orders and track them from your profile.
-            </p>
-            <Link to="/register" className="inline-block bg-[#F4A261] hover:bg-white text-white hover:text-[#1B4332] font-black px-10 py-3.5 rounded-xl transition duration-300 shadow-md active:scale-[0.98] uppercase text-xs tracking-wider">
-              Create Account
-            </Link>
-          </div>
-        </div>
-      </section>
-
+        </section>
+      )}
     </div>
   );
 }
