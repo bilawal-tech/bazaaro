@@ -16,6 +16,7 @@ import {
 } from '../../redux/slices/categorySlice';
 import ProductCard from '../../components/products/ProductCard';
 import Loader      from '../../components/common/Loader';
+import Pagination  from '../../components/common/Pagination';
 
 const DEFAULT_FILTERS = {
   search: '', category: '', minPrice: '', maxPrice: '', sort: '-createdAt', page: 1, limit: 12,
@@ -27,19 +28,6 @@ const sortOptions = [
   { label: 'Price: high to low', value: '-price'  },
   { label: 'Top rated',       value: '-ratings'   },
 ];
-
-// Pagination: 1 ... 4 5 6 ... 20  (saare page numbers nahi)
-function getPageList(current, total) {
-  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
-  const pages = [1];
-  const start = Math.max(2, current - 1);
-  const end   = Math.min(total - 1, current + 1);
-  if (start > 2) pages.push('gap-start');
-  for (let p = start; p <= end; p++) pages.push(p);
-  if (end < total - 1) pages.push('gap-end');
-  pages.push(total);
-  return pages;
-}
 
 function ShopPage() {
   const dispatch    = useDispatch();
@@ -240,48 +228,7 @@ function ShopPage() {
               </div>
             )}
 
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <nav aria-label="Pagination" className="mt-10 flex flex-wrap items-center justify-center gap-1.5 border-t border-line pt-6">
-                <button
-                  type="button"
-                  onClick={() => handlePageChange(currentPage - 1)}
-                  disabled={currentPage === 1}
-                  className="btn-secondary btn-sm"
-                >
-                  Previous
-                </button>
-
-                {getPageList(currentPage, totalPages).map((page) =>
-                  typeof page === 'string' ? (
-                    <span key={page} className="px-1 text-ink-faint">…</span>
-                  ) : (
-                    <button
-                      key={page}
-                      type="button"
-                      onClick={() => handlePageChange(page)}
-                      aria-current={page === currentPage ? 'page' : undefined}
-                      className={`h-9 min-w-[36px] rounded-lg px-2 text-sm font-medium transition ${
-                        page === currentPage
-                          ? 'bg-brand-800 text-white'
-                          : 'border border-line bg-white text-ink hover:border-brand-700'
-                      }`}
-                    >
-                      {page}
-                    </button>
-                  )
-                )}
-
-                <button
-                  type="button"
-                  onClick={() => handlePageChange(currentPage + 1)}
-                  disabled={currentPage === totalPages}
-                  className="btn-secondary btn-sm"
-                >
-                  Next
-                </button>
-              </nav>
-            )}
+            <Pagination page={currentPage} totalPages={totalPages} onChange={handlePageChange} />
 
           </div>
         </div>

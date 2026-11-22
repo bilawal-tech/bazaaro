@@ -8,12 +8,7 @@ import {
   selectUser,
 } from '../../redux/slices/authSlice';
 
-const inputClass = (hasError) =>
-  `w-full px-4 py-2.5 bg-white rounded-xl border text-sm outline-none text-slate-800 font-medium transition focus:ring-4 focus:ring-[#2D6A4F]/10 ${
-    hasError ? 'border-rose-400 focus:border-rose-500' : 'border-slate-200 focus:border-[#2D6A4F]'
-  }`;
-
-const labelClass = 'block text-[11px] font-black text-slate-500 uppercase tracking-wider mb-1';
+const inputClass = (hasError) => `input ${hasError ? 'border-red-400' : ''}`;
 
 function ProfilePage() {
   const dispatch = useDispatch();
@@ -79,90 +74,66 @@ function ProfilePage() {
   if (!profile) return null;
 
   return (
-    <div className="min-h-screen py-16 bg-slate-50 text-slate-800 antialiased">
-      <div className="max-w-2xl mx-auto px-4">
+    <div className="bg-surface">
+      <div className="container-page max-w-2xl py-8 sm:py-12">
 
-        <div className="mb-8">
-          <h1 className="text-[#1B4332] text-2xl font-black tracking-tight">My Profile</h1>
-          <p className="text-slate-500 text-xs font-bold mt-1 uppercase tracking-wider">
-            Manage your details and password
-          </p>
+        <div className="mb-6">
+          <h1 className="page-title">My profile</h1>
+          <p className="mt-1 text-sm text-ink-soft">Manage your details and password</p>
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6" noValidate>
 
-          {/* Personal */}
-          <div className="rounded-xl bg-white border border-slate-100 shadow-sm p-6 space-y-4">
-            <h2 className="text-slate-800 text-sm font-black uppercase tracking-wider">
-              Personal Details
-            </h2>
+          <section className="card space-y-4 p-5 sm:p-6">
+            <h2 className="text-lg font-semibold">Personal details</h2>
 
             <div>
-              <label className={labelClass}>Email</label>
-              <input
-                value={profile.email || ''}
-                disabled
-                className="w-full px-4 py-2.5 bg-slate-50 rounded-xl border border-slate-200 text-sm text-slate-500 font-medium cursor-not-allowed"
-              />
-              <p className="text-[11px] text-slate-400 mt-1">Email cannot be changed.</p>
+              <label htmlFor="email" className="label">Email</label>
+              <input id="email" value={profile.email || ''} disabled className="input" />
+              <p className="mt-1 text-xs text-ink-faint">Email cannot be changed.</p>
             </div>
 
             <div>
-              <label className={labelClass}>Full Name</label>
-              <input
-                className={inputClass(errors.name)}
-                {...register('name', { required: 'Name is required' })}
-              />
-              {errors.name && (
-                <p className="text-rose-500 text-xs mt-1 font-semibold">{errors.name.message}</p>
-              )}
+              <label htmlFor="name" className="label">Full name</label>
+              <input id="name" className={inputClass(errors.name)} {...register('name', { required: 'Name is required' })} />
+              {errors.name && <p className="field-error">{errors.name.message}</p>}
             </div>
 
             <div>
-              <label className={labelClass}>Phone</label>
-              <input
-                className={inputClass(errors.phone)}
-                {...register('phone', { required: 'Phone number is required' })}
-              />
-              {errors.phone && (
-                <p className="text-rose-500 text-xs mt-1 font-semibold">{errors.phone.message}</p>
-              )}
+              <label htmlFor="phone" className="label">Phone</label>
+              <input id="phone" className={inputClass(errors.phone)} {...register('phone', { required: 'Phone number is required' })} />
+              {errors.phone && <p className="field-error">{errors.phone.message}</p>}
             </div>
-          </div>
+          </section>
 
-          {/* Address */}
-          <div className="rounded-xl bg-white border border-slate-100 shadow-sm p-6 space-y-4">
-            <h2 className="text-slate-800 text-sm font-black uppercase tracking-wider">
-              Default Address
-            </h2>
+          <section className="card space-y-4 p-5 sm:p-6">
+            <h2 className="text-lg font-semibold">Default address</h2>
             <div>
-              <label className={labelClass}>Street</label>
-              <input className={inputClass(false)} {...register('street')} />
+              <label htmlFor="street" className="label">Street</label>
+              <input id="street" className="input" {...register('street')} />
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
-                <label className={labelClass}>City</label>
-                <input className={inputClass(false)} {...register('city')} />
+                <label htmlFor="city" className="label">City</label>
+                <input id="city" className="input" {...register('city')} />
               </div>
               <div>
-                <label className={labelClass}>Zip</label>
-                <input className={inputClass(false)} {...register('zip')} />
+                <label htmlFor="zip" className="label">Postal code</label>
+                <input id="zip" className="input" {...register('zip')} />
               </div>
             </div>
-          </div>
+          </section>
 
-          {/* Password */}
-          <div className="rounded-xl bg-white border border-slate-100 shadow-sm p-6 space-y-4">
+          <section className="card space-y-4 p-5 sm:p-6">
             <div>
-              <h2 className="text-slate-800 text-sm font-black uppercase tracking-wider">
-                Change Password
-              </h2>
-              <p className="text-[11px] text-slate-400 mt-1">Leave blank to keep your current password.</p>
+              <h2 className="text-lg font-semibold">Change password</h2>
+              <p className="mt-1 text-sm text-ink-soft">Leave blank to keep your current password.</p>
             </div>
 
             <div>
-              <label className={labelClass}>Current Password</label>
+              <label htmlFor="currentPassword" className="label">Current password</label>
               <input
+                id="currentPassword"
                 type="password"
                 autoComplete="current-password"
                 className={inputClass(errors.currentPassword)}
@@ -170,29 +141,25 @@ function ProfilePage() {
                   validate: (v, form) => !form.newPassword || !!v || 'Enter your current password',
                 })}
               />
-              {errors.currentPassword && (
-                <p className="text-rose-500 text-xs mt-1 font-semibold">{errors.currentPassword.message}</p>
-              )}
+              {errors.currentPassword && <p className="field-error">{errors.currentPassword.message}</p>}
             </div>
 
             <div>
-              <label className={labelClass}>New Password</label>
+              <label htmlFor="newPassword" className="label">New password</label>
               <input
+                id="newPassword"
                 type="password"
                 autoComplete="new-password"
                 className={inputClass(errors.newPassword)}
-                {...register('newPassword', {
-                  minLength: { value: 6, message: 'At least 6 characters' },
-                })}
+                {...register('newPassword', { minLength: { value: 6, message: 'Use at least 6 characters' } })}
               />
-              {errors.newPassword && (
-                <p className="text-rose-500 text-xs mt-1 font-semibold">{errors.newPassword.message}</p>
-              )}
+              {errors.newPassword && <p className="field-error">{errors.newPassword.message}</p>}
             </div>
 
             <div>
-              <label className={labelClass}>Confirm New Password</label>
+              <label htmlFor="confirmPassword" className="label">Confirm new password</label>
               <input
+                id="confirmPassword"
                 type="password"
                 autoComplete="new-password"
                 className={inputClass(errors.confirmPassword)}
@@ -200,18 +167,12 @@ function ProfilePage() {
                   validate: (v, form) => v === form.newPassword || 'Passwords do not match',
                 })}
               />
-              {errors.confirmPassword && (
-                <p className="text-rose-500 text-xs mt-1 font-semibold">{errors.confirmPassword.message}</p>
-              )}
+              {errors.confirmPassword && <p className="field-error">{errors.confirmPassword.message}</p>}
             </div>
-          </div>
+          </section>
 
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="w-full bg-[#1B4332] hover:bg-[#132A20] text-white text-xs font-black py-3.5 rounded-xl uppercase tracking-widest transition disabled:opacity-60"
-          >
-            {isSubmitting ? 'Saving...' : 'Save Changes'}
+          <button type="submit" disabled={isSubmitting} className="btn-primary btn-lg w-full">
+            {isSubmitting ? 'Saving…' : 'Save changes'}
           </button>
         </form>
       </div>
