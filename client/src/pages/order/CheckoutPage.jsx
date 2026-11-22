@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import toast from 'react-hot-toast'; // 💡 react-hot-toast strictly configured here
+import toast from 'react-hot-toast';
 import {
   selectCartItems,
   selectTotalPrice,
@@ -14,6 +14,16 @@ import {
   clearSuccess,
 } from '../../redux/slices/orderSlice';
 import { selectUser } from '../../redux/slices/authSlice';
+
+// Abhi sirf COD chalta hai (server par koi payment gateway nahi).
+// Stripe lagne par baqi methods ke liye enabled: true kar dena.
+const PAYMENT_METHODS = [
+  { value: 'COD',           label: 'Cash on delivery',    hint: 'Pay when your order arrives', enabled: true  },
+  { value: 'Credit Card',   label: 'Credit or debit card', hint: 'Coming soon',                 enabled: false },
+  { value: 'Jazzcash',      label: 'JazzCash',            hint: 'Coming soon',                 enabled: false },
+  { value: 'Easypaisa',     label: 'Easypaisa',           hint: 'Coming soon',                 enabled: false },
+  { value: 'Bank Transfer', label: 'Bank transfer',       hint: 'Coming soon',                 enabled: false },
+];
 
 function CheckoutPage() {
   const dispatch   = useDispatch();
@@ -46,17 +56,7 @@ function CheckoutPage() {
   // ── Order success → Toast show karo aur orders page pr le jao ──
   useEffect(() => {
     if (success) {
-      // 💡 react-hot-toast syntax applied perfectly
-      toast.success('Order Placed Successfully!', {
-        duration: 3000,
-        position: 'top-right',
-        style: {
-          background: '#1B4332',
-          color: '#fff',
-          fontWeight: 'bold',
-          fontSize: '14px'
-        }
-      });
+      toast.success('Order placed');
       dispatch(clearSuccess());
       navigate('/orders');
     }
@@ -95,200 +95,124 @@ function CheckoutPage() {
     }));
   };
 
-  return (
-    <div className="min-h-screen py-16 bg-slate-50 text-slate-800 antialiased unified-layout">
-      <div className="max-w-5xl mx-auto px-4">
+  const field = (name, label, opts = {}) => (
+    <div className={opts.span ? 'sm:col-span-2' : ''}>
+      <label htmlFor={name} className="label">{label}</label>
+      <input
+        id={name}
+        {...register(name, opts.required ? { required: `${label} is required` } : {})}
+        placeholder={opts.placeholder}
+        autoComplete={opts.autoComplete}
+        className="input"
+      />
+      {errors[name] && <p className="field-error">{errors[name].message}</p>}
+    </div>
+  );
 
-        <h1 className="text-[#1B4332] text-2xl font-black tracking-tight mb-8">
-          Secure Checkout
-        </h1>
+  return (
+    <div className="bg-surface">
+      <div className="container-page py-8 sm:py-12">
+
+        <h1 className="page-title mb-6">Checkout</h1>
 
         <form onSubmit={handleSubmit(onSubmit)}>
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start relative">
+          <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-3">
 
-            {/* ── Left Side — Shipping + Payment Info ── */}
-            <div className="lg:col-span-2 flex flex-col gap-6">
+            {/* Left: address + payment */}
+            <div className="flex flex-col gap-6 lg:col-span-2">
 
-              {/* Shipping Address Container */}
-              <div className="rounded-xl p-6 bg-white border border-slate-100 shadow-sm">
-                <h2 className="text-[#1B4332] text-sm font-black uppercase tracking-wider mb-5 pb-2 border-b border-slate-100">
-                  Shipping Address
-                </h2>
+              <section className="card p-5 sm:p-6">
+                <h2 className="mb-5 text-lg font-semibold">Delivery address</h2>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  {field('fullName', 'Full name', { required: true, autoComplete: 'name' })}
+                  {field('phone', 'Phone number', { required: true, autoComplete: 'tel' })}
+                  {field('street', 'Street address', { required: true, span: true, placeholder: 'House no., street, area', autoComplete: 'street-address' })}
+                  {field('city', 'City', { required: true, autoComplete: 'address-level2' })}
+                  {field('zip', 'Postal code (optional)', { autoComplete: 'postal-code' })}
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  
-                  {/* Full Name Input */}
-                  <div>
-                    <label className="text-slate-400 text-xs font-bold block mb-1">
-                      Full Name
-                    </label>
-                    <input
-                      {...register('fullName', { required: 'Full name is required' })}
-                      className="w-full px-3 py-2.5 rounded-lg text-sm text-slate-800 bg-slate-50 border border-slate-200 focus:border-[#1B4332] focus:bg-white outline-none transition-all duration-200"
-                    />
-                    {errors.fullName && (
-                      <p className="text-rose-500 text-xs mt-1 font-semibold">{errors.fullName.message}</p>
-                    )}
-                  </div>
-
-                  {/* Phone Input */}
-                  <div>
-                    <label className="text-slate-400 text-xs font-bold block mb-1">
-                      Phone Number
-                    </label>
-                    <input
-                      {...register('phone', { required: 'Phone number is required' })}
-                      className="w-full px-3 py-2.5 rounded-lg text-sm text-slate-800 bg-slate-50 border border-slate-200 focus:border-[#1B4332] focus:bg-white outline-none transition-all duration-200"
-                    />
-                    {errors.phone && (
-                      <p className="text-rose-500 text-xs mt-1 font-semibold">{errors.phone.message}</p>
-                    )}
-                  </div>
-
-                  {/* Street Address Input */}
-                  <div className="md:col-span-2">
-                    <label className="text-slate-400 text-xs font-bold block mb-1">
-                      Street Address
-                    </label>
-                    <input
-                      {...register('street', { required: 'Street address is required' })}
-                      placeholder="House #, Street name, Apartment, Sector"
-                      className="w-full px-3 py-2.5 rounded-lg text-sm text-slate-800 bg-slate-50 border border-slate-200 focus:border-[#1B4332] focus:bg-white outline-none transition-all duration-200 placeholder:text-slate-300"
-                    />
-                    {errors.street && (
-                      <p className="text-rose-500 text-xs mt-1 font-semibold">{errors.street.message}</p>
-                    )}
-                  </div>
-
-                  {/* City Input */}
-                  <div>
-                    <label className="text-slate-400 text-xs font-bold block mb-1">
-                      City
-                    </label>
-                    <input
-                      {...register('city', { required: 'City is required' })}
-                      className="w-full px-3 py-2.5 rounded-lg text-sm text-slate-800 bg-slate-50 border border-slate-200 focus:border-[#1B4332] focus:bg-white outline-none transition-all duration-200"
-                    />
-                    {errors.city && (
-                      <p className="text-rose-500 text-xs mt-1 font-semibold">{errors.city.message}</p>
-                    )}
-                  </div>
-
-                  {/* Zip Code Input */}
-                  <div>
-                    <label className="text-slate-400 text-xs font-bold block mb-1">
-                      Zip Code (Optional)
-                    </label>
-                    <input
-                      {...register('zip')}
-                      className="w-full px-3 py-2.5 rounded-lg text-sm text-slate-800 bg-slate-50 border border-slate-200 focus:border-[#1B4332] focus:bg-white outline-none transition-all duration-200"
-                    />
-                  </div>
-
-                  {/* Order Note Input */}
-                  <div className="md:col-span-2 mt-2">
-                    <label className="text-slate-400 text-xs font-bold block mb-1">
-                      Order Note / Special Instructions (Optional)
-                    </label>
+                  <div className="sm:col-span-2">
+                    <label htmlFor="orderNote" className="label">Order note (optional)</label>
                     <textarea
+                      id="orderNote"
                       {...register('orderNote')}
                       rows={3}
-                      placeholder="Notes about your order, e.g. special notes for delivery."
-                      className="w-full px-3 py-2.5 rounded-lg text-sm text-slate-800 bg-slate-50 border border-slate-200 focus:border-[#1B4332] focus:bg-white outline-none transition-all duration-200 placeholder:text-slate-300 resize-none"
+                      placeholder="Anything we should know for delivery"
+                      className="input resize-none"
                     />
                   </div>
-
                 </div>
-              </div>
+              </section>
 
-              {/* Payment Method Container */}
-              <div className="rounded-xl p-6 bg-white border border-slate-100 shadow-sm">
-                <h2 className="text-[#1B4332] text-sm font-black uppercase tracking-wider mb-4 pb-2 border-b border-slate-100">
-                  Payment Method
-                </h2>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {[
-                    { value: 'COD',           label: '💵 Cash on Delivery' },
-                    { value: 'Jazzcash',      label: '📱 JazzCash'         },
-                    { value: 'Easypaisa',     label: '📱 EasyPaisa'        },
-                    { value: 'Credit Card',   label: '💳 Credit/Debit Card' },
-                    { value: 'Bank Transfer', label: '🏦 Bank Transfer'    },
-                  ].map((method) => (
+              <section className="card p-5 sm:p-6">
+                <h2 className="mb-5 text-lg font-semibold">Payment method</h2>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  {PAYMENT_METHODS.map((method) => (
                     <label
                       key={method.value}
-                      className="flex items-center gap-3 p-3.5 rounded-xl border border-slate-200 bg-slate-50 cursor-pointer hover:border-[#1B4332] hover:bg-white transition-all duration-200 group"
+                      className={`flex items-start gap-3 rounded-xl border p-4 transition ${
+                        method.enabled
+                          ? 'cursor-pointer border-line hover:border-brand-700 has-[:checked]:border-brand-800 has-[:checked]:bg-brand-50'
+                          : 'cursor-not-allowed border-line bg-surface opacity-60'
+                      }`}
                     >
                       <input
                         type="radio"
                         value={method.value}
                         defaultChecked={method.value === 'COD'}
+                        disabled={!method.enabled}
                         {...register('PaymentMethod', { required: true })}
-                        className="accent-[#1B4332] w-4 h-4"
+                        className="mt-0.5 h-4 w-4 accent-brand-800"
                       />
-                      <span className="text-slate-700 text-xs font-black tracking-tight group-hover:text-[#1B4332]">
-                        {method.label}
+                      <span>
+                        <span className="block text-sm font-medium text-ink">{method.label}</span>
+                        <span className="block text-xs text-ink-soft">{method.hint}</span>
                       </span>
                     </label>
                   ))}
                 </div>
-              </div>
-
+              </section>
             </div>
 
-            {/* ── Right Side — Fixed Sticky Summary Sidebar ── */}
-            <div className="lg:col-span-1 lg:sticky lg:top-24 self-start">
-              <div className="rounded-xl p-6 bg-gradient-to-br from-[#1B4332] via-[#132A20] to-[#2D6A4F] text-white border border-white/5 shadow-xl">
-                <h2 className="text-white font-black text-xs uppercase tracking-widest mb-5 pb-2 border-b border-white/10">
-                  Order Items
-                </h2>
+            {/* Right: summary */}
+            <aside className="lg:sticky lg:top-32">
+              <div className="card p-6">
+                <h2 className="mb-4 text-lg font-semibold">Order summary</h2>
 
-                <div className="flex flex-col gap-3 mb-5 max-h-48 overflow-y-auto pr-1 scrollbar-thin">
+                <ul className="mb-4 max-h-56 space-y-3 overflow-y-auto pr-1">
                   {items.map((item) => (
-                    <div key={item._id} className="flex justify-between items-start gap-4 text-xs font-bold">
-                      <span className="text-slate-300 flex-1 truncate">
-                        {item.name || item.productId?.name} <span className="text-white font-black">× {item.quantity}</span>
+                    <li key={item._id} className="flex justify-between gap-4 text-sm">
+                      <span className="min-w-0 flex-1 truncate text-ink-soft">
+                        {item.name || item.productId?.name}
+                        <span className="font-medium text-ink"> × {item.quantity}</span>
                       </span>
-                      <span className="text-white tabular-nums flex-shrink-0">
+                      <span className="shrink-0 font-medium text-ink">
                         Rs. {((item.currentProductPrice || item.productId?.price || 0) * item.quantity).toLocaleString()}
                       </span>
-                    </div>
+                    </li>
                   ))}
-                </div>
+                </ul>
 
-                <hr className="border-white/10 mb-4" />
-
-                <div className="space-y-3 text-xs font-bold text-slate-300 mb-5">
+                <dl className="space-y-3 border-t border-line pt-4 text-sm">
                   <div className="flex justify-between">
-                    <span>Subtotal</span>
-                    <span className="text-white tabular-nums">Rs. {totalPrice?.toLocaleString()}</span>
+                    <dt className="text-ink-soft">Subtotal</dt>
+                    <dd className="font-medium text-ink">Rs. {totalPrice?.toLocaleString()}</dd>
                   </div>
                   <div className="flex justify-between">
-                    <span>Shipping</span>
-                    <span className="text-[#95D5B2] font-black uppercase tracking-wider text-[11px]">
-                      {shippingPrice === 0 ? 'Free Shipping' : `Rs. ${shippingPrice}`}
-                    </span>
+                    <dt className="text-ink-soft">Shipping</dt>
+                    <dd className="font-medium text-ink">{shippingPrice === 0 ? 'Free' : `Rs. ${shippingPrice}`}</dd>
                   </div>
+                </dl>
+
+                <div className="mt-4 flex justify-between border-t border-line pt-4">
+                  <span className="font-semibold">Total</span>
+                  <span className="text-xl font-bold text-brand-800">Rs. {grandTotal.toLocaleString()}</span>
                 </div>
 
-                <hr className="border-white/10 mb-5" />
-
-                <div className="flex justify-between text-white font-black text-base tracking-tight mb-6">
-                  <span>Total Amount</span>
-                  <span className="text-[#F4A261] tabular-nums">
-                    Rs. {grandTotal.toLocaleString()}
-                  </span>
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full bg-[#F4A261] hover:bg-white text-white hover:text-[#1B4332] text-xs font-black py-4 rounded-xl shadow-lg transition-all duration-300 uppercase tracking-widest active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed"
-                >
-                  {loading ? 'Processing Order...' : 'Confirm & Place Order'}
+                <button type="submit" disabled={loading} className="btn-primary btn-lg mt-5 w-full">
+                  {loading ? 'Placing order…' : 'Place order'}
                 </button>
               </div>
-            </div>
+            </aside>
 
           </div>
         </form>
