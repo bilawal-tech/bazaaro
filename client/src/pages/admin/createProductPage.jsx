@@ -10,7 +10,9 @@ import {
   selectProduct,
   selectLoading,
 } from '../../redux/slices/productSlice';
+import { FiArrowLeft, FiPlus, FiX, FiTrash2, FiImage, FiChevronDown, FiChevronRight } from 'react-icons/fi';
 import Loader from '../../components/common/Loader';
+import { AdminPage, AdminHeader, Panel } from '../../components/admin/AdminUI';
 import {
   getAllCategories,
   selectCategories,
@@ -100,13 +102,13 @@ function ProductForm({ product }) {
   // Add new color variant
   const addVariant = () => {
     setVariants([...variants, blankVariant()]);
-    toast.success('✅ New color variant added');
+    toast.success('New color variant added');
   };
 
   // Remove color variant
   const removeVariant = (variantId) => {
     setVariants(variants.filter(v => v.id !== variantId));
-    toast.success('✅ Variant removed');
+    toast.success('Variant removed');
   };
 
   // Add size to variant
@@ -123,7 +125,7 @@ function ProductForm({ product }) {
       }
       return v;
     }));
-    toast.success('✅ New size added');
+    toast.success('New size added');
   };
 
   // Remove size from variant
@@ -137,7 +139,7 @@ function ProductForm({ product }) {
       }
       return v;
     }));
-    toast.success('✅ Size removed');
+    toast.success('Size removed');
   };
 
   // Handle variant color change
@@ -182,7 +184,7 @@ function ProductForm({ product }) {
       }
       return v;
     }));
-    toast.success(`✅ ${newFiles.length} image(s) added`);
+    toast.success(`${newFiles.length} image(s) added`);
   };
 
   // Remove a mistakenly added variant image
@@ -260,7 +262,7 @@ function ProductForm({ product }) {
     setErrors(newErrors);
     
     if (Object.keys(newErrors).length > 0) {
-      toast.error('❌ Please fix the errors above');
+      toast.error('Please fix the errors shown');
       return false;
     }
     return true;
@@ -285,7 +287,7 @@ function ProductForm({ product }) {
           createCategory({ name: formData.newCategoryName })
         ).unwrap();
         categoryId = res.category._id;
-        toast.success('✅ Category created');
+        toast.success('Category created');
       }
 
       const payload = new FormData();
@@ -324,82 +326,67 @@ function ProductForm({ product }) {
         : await dispatch(createProduct(payload)).unwrap();
 
       if (result.success) {
-        toast.success(isEdit ? '🎉 Product updated!' : '🎉 Product created successfully!');
+        toast.success(isEdit ? 'Product updated!' : 'Product created successfully!');
         setTimeout(() => {
           navigate('/admin/products');
         }, 1200);
       }
     } catch (err) {
-      toast.error(`❌ ${typeof err === 'string' ? err : 'Failed to save product'}`);
+      toast.error(`${typeof err === 'string' ? err : 'Failed to save product'}`);
       console.error('Error:', err);
     }
   };
 
+  const err = (key) => (errors[key] ? '!border-red-500' : '');
+  const fieldError = (name) => (errors[name] ? <p className="field-error">{errors[name]}</p> : null);
+
   return (
-    <div className="min-h-screen py-8 bg-white">
-      <div className="max-w-4xl mx-auto px-4">
-
-        {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-gray-900 text-2xl font-bold">
-            {isEdit ? 'Edit Product' : 'Create Product'}
-          </h1>
-          <button
-            onClick={() => navigate('/admin/products')}
-            className="text-gray-600 hover:text-gray-900"
-          >
-            ← Back
+    <AdminPage narrow>
+      <AdminHeader
+        title={isEdit ? 'Edit product' : 'Create product'}
+        subtitle="Fill in the details, add colors and sizes, then save."
+        actions={
+          <button type="button" onClick={() => navigate('/admin/products')} className="btn-secondary btn-sm">
+            <FiArrowLeft size={16} /> Back
           </button>
-        </div>
+        }
+      />
 
-        <form onSubmit={handleSubmit} className="rounded-xl p-6 border border-gray-200 bg-white shadow-sm">
+      <form onSubmit={handleSubmit} className="space-y-5" noValidate>
 
-          {/* BASIC INFO */}
-          <div className="mb-6">
-            <h2 className="text-gray-900 font-bold mb-4 text-lg">
-              Basic Information
-            </h2>
-
-            <div className="mb-4">
-              <label className="text-gray-700 text-sm block mb-1">
-                Product Name *
-              </label>
+        {/* BASIC INFO */}
+        <Panel title="Basic information">
+          <div className="space-y-4">
+            <div>
+              <label htmlFor="p-name" className="label">Product name *</label>
               <input
+                id="p-name"
                 type="text"
                 name="name"
                 value={formData.name}
                 onChange={handleChange}
-                placeholder="e.g., Cotton Shirt"
-                className={`w-full px-3 py-2 rounded-lg text-sm text-gray-900 outline-none border ${
-                  errors.name
-                    ? 'border-red-500 bg-red-50'
-                    : 'border-gray-300 focus:border-green-500'
-                }`}
+                placeholder="e.g., Cotton shirt"
+                className={`input ${err('name')}`}
               />
-              {errors.name && <p className="text-red-500 text-xs mt-1">⚠️ {errors.name}</p>}
+              {fieldError('name')}
             </div>
 
-            <div className="grid grid-cols-2 gap-3 mb-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
-                <label className="text-gray-700 text-sm block mb-1">Brand</label>
+                <label htmlFor="p-brand" className="label">Brand</label>
                 <input
+                  id="p-brand"
                   type="text"
                   name="brand"
                   value={formData.brand}
                   onChange={handleChange}
                   placeholder="e.g., Nike"
-                  className="w-full px-3 py-2 rounded-lg text-sm text-gray-900 outline-none border border-gray-300 focus:border-green-500"
+                  className="input"
                 />
               </div>
-
               <div>
-                <label className="text-gray-700 text-sm block mb-1">Unit Type</label>
-                <select
-                  name="unitType"
-                  value={formData.unitType}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2 rounded-lg text-sm text-gray-900 outline-none border border-gray-300 focus:border-green-500"
-                >
+                <label htmlFor="p-unit" className="label">Unit type</label>
+                <select id="p-unit" name="unitType" value={formData.unitType} onChange={handleChange} className="input">
                   <option value="unit">Unit</option>
                   <option value="kg">KG</option>
                   <option value="gram">Gram</option>
@@ -410,325 +397,291 @@ function ProductForm({ product }) {
               </div>
             </div>
 
-            <div className="mb-4">
-              <label className="text-gray-700 text-sm block mb-1">Description</label>
+            <div>
+              <label htmlFor="p-desc" className="label">Description</label>
               <textarea
+                id="p-desc"
                 name="description"
                 value={formData.description}
                 onChange={handleChange}
-                placeholder="Product details..."
+                placeholder="Product details"
                 rows={3}
-                className="w-full px-3 py-2 rounded-lg text-sm text-gray-900 outline-none border border-gray-300 focus:border-green-500"
+                className="input resize-none"
               />
             </div>
           </div>
+        </Panel>
 
-          {/* CATEGORY */}
-          <div className="mb-6">
-            <h2 className="text-gray-900 font-bold mb-4 text-lg">Category</h2>
-
-            {isNewCategory ? (
-              <input
-                type="text"
-                name="newCategoryName"
-                value={formData.newCategoryName}
-                onChange={handleChange}
-                placeholder="Enter category name"
-                className={`w-full px-3 py-2 rounded-lg text-sm text-gray-900 outline-none border ${
-                  errors.category ? 'border-red-500 bg-red-50' : 'border-green-500'
-                }`}
-              />
-            ) : (
-              <select
-                name="category"
-                value={formData.category}
-                onChange={handleChange}
-                className={`w-full px-3 py-2 rounded-lg text-sm text-gray-900 outline-none border ${
-                  errors.category ? 'border-red-500 bg-red-50' : 'border-gray-300 focus:border-green-500'
-                }`}
-              >
-                <option value="">Select Category</option>
-                {categories.map(cat => (
-                  <option key={cat._id} value={cat._id}>{cat.name}</option>
-                ))}
-              </select>
-            )}
-
-            {errors.category && <p className="text-red-500 text-xs mt-1">⚠️ {errors.category}</p>}
-
-            <button
-              type="button"
-              onClick={() => setIsNewCategory(!isNewCategory)}
-              className="text-green-600 text-sm mt-2 hover:underline font-medium"
+        {/* CATEGORY */}
+        <Panel title="Category">
+          {isNewCategory ? (
+            <input
+              type="text"
+              name="newCategoryName"
+              value={formData.newCategoryName}
+              onChange={handleChange}
+              placeholder="New category name"
+              aria-label="New category name"
+              className={`input ${err('category')}`}
+            />
+          ) : (
+            <select
+              name="category"
+              value={formData.category}
+              onChange={handleChange}
+              aria-label="Category"
+              className={`input ${err('category')}`}
             >
-              {isNewCategory ? '← Use Existing' : '+ New Category'}
+              <option value="">Select category</option>
+              {categories.map(cat => (
+                <option key={cat._id} value={cat._id}>{cat.name}</option>
+              ))}
+            </select>
+          )}
+          {fieldError('category')}
+          <button
+            type="button"
+            onClick={() => setIsNewCategory(!isNewCategory)}
+            className="link mt-3 text-sm"
+          >
+            {isNewCategory ? 'Use an existing category' : '+ New category'}
+          </button>
+        </Panel>
+
+        {/* VARIANTS */}
+        <Panel
+          title="Colors and sizes *"
+          action={
+            <button type="button" onClick={addVariant} className="btn-secondary btn-sm">
+              <FiPlus size={16} /> Add color
             </button>
-          </div>
+          }
+        >
+          <p className="mb-4 text-sm text-slate-500">
+            Each color has its own photos. Each size has its own price and stock.
+          </p>
+          {fieldError('variants')}
 
-          {/* VARIANTS */}
-          <div className="mb-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-gray-900 font-bold text-lg">
-                Color Variants *
-              </h2>
-              <button
-                type="button"
-                onClick={addVariant}
-                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium"
-              >
-                + Add Color
-              </button>
-            </div>
+          <div className="space-y-3">
+            {variants.map((variant, variantIdx) => {
+              const open = expandedVariant === variantIdx;
+              const thumb = variant.existingImages[0]
+                ? `${BACKEND_URL}${variant.existingImages[0]}`
+                : variant.imagePreview[0];
+              const hasError = Object.keys(errors).some(k => k.startsWith(`variant_${variantIdx}_`));
+              return (
+                <div key={variant.id} className={`overflow-hidden rounded-lg border ${hasError ? 'border-red-300' : 'border-slate-200'}`}>
 
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4 text-xs text-gray-700">
-              <p className="font-semibold mb-2">📋 How to use:</p>
-              <ul className="space-y-1 ml-4 list-disc">
-                <li><strong>Color</strong> — e.g., Red, Blue, Black</li>
-                <li><strong>Variant Images</strong> — Photos of this color (You can select multiple)</li>
-                <li><strong>Sizes</strong> — S, M, L, XL (different price/stock per size)</li>
-              </ul>
-            </div>
-
-            {errors.variants && <p className="text-red-500 text-xs mb-3">⚠️ {errors.variants}</p>}
-
-            {/* Variants */}
-            <div className="space-y-3">
-              {variants.map((variant, variantIdx) => (
-                <div key={variant.id} className="border border-gray-200 rounded-lg overflow-hidden">
-
-                  {/* Tab Header */}
                   <button
                     type="button"
-                    onClick={() => setExpandedVariant(expandedVariant === variantIdx ? -1 : variantIdx)}
-                    className={`w-full px-4 py-3 text-left font-medium transition flex items-center justify-between ${
-                      expandedVariant === variantIdx
-                        ? 'bg-green-100 text-green-900'
-                        : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
+                    onClick={() => setExpandedVariant(open ? -1 : variantIdx)}
+                    aria-expanded={open}
+                    className={`flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition ${
+                      open ? 'bg-slate-100' : 'bg-slate-50 hover:bg-slate-100'
                     }`}
                   >
-                    <div className="flex items-center gap-3">
-                      {(variant.existingImages.length > 0 || variant.imagePreview.length > 0) && (
-                        <img
-                          src={variant.existingImages[0] ? `${BACKEND_URL}${variant.existingImages[0]}` : variant.imagePreview[0]}
-                          alt={variant.color}
-                          className="w-10 h-10 rounded object-cover"
-                        />
+                    <span className="flex min-w-0 items-center gap-3">
+                      {thumb ? (
+                        <img src={thumb} alt="" className="h-10 w-10 shrink-0 rounded-md border border-slate-200 object-cover" />
+                      ) : (
+                        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-dashed border-slate-300 text-slate-400">
+                          <FiImage size={16} />
+                        </span>
                       )}
-                      <span>
-                        {variant.color ? `${variant.color}` : 'New Variant'} ({variant.sizes.length} size{variant.sizes.length !== 1 ? 's' : ''})
+                      <span className="min-w-0">
+                        <span className="block truncate text-sm font-medium text-slate-900">{variant.color || 'New color'}</span>
+                        <span className="block text-xs text-slate-500">
+                          {variant.sizes.length} size{variant.sizes.length !== 1 ? 's' : ''}
+                          {hasError && <span className="text-red-600"> · needs attention</span>}
+                        </span>
                       </span>
-                    </div>
-                    <span>{expandedVariant === variantIdx ? '▼' : '▶'}</span>
+                    </span>
+                    {open ? <FiChevronDown size={18} className="shrink-0 text-slate-500" /> : <FiChevronRight size={18} className="shrink-0 text-slate-500" />}
                   </button>
 
-                  {/* Content */}
-                  {expandedVariant === variantIdx && (
-                    <div className="p-4 bg-white border-t border-gray-200 space-y-4">
+                  {open && (
+                    <div className="space-y-5 border-t border-slate-200 bg-white p-4">
 
                       {/* Color */}
                       <div>
-                        <label className="text-gray-700 text-sm block mb-1">Color Name *</label>
+                        <label htmlFor={`color-${variant.id}`} className="label">Color name *</label>
                         <input
+                          id={`color-${variant.id}`}
                           type="text"
                           value={variant.color}
                           onChange={(e) => handleVariantColorChange(variant.id, e.target.value)}
                           placeholder="e.g., Red"
-                          className={`w-full px-3 py-2 rounded-lg text-sm text-gray-900 outline-none border ${
-                            errors[`variant_${variantIdx}_color`] ? 'border-red-500' : 'border-gray-300 focus:border-green-500'
-                          }`}
+                          className={`input ${err(`variant_${variantIdx}_color`)}`}
                         />
-                        {errors[`variant_${variantIdx}_color`] && (
-                          <p className="text-red-500 text-xs mt-1">⚠️ {errors[`variant_${variantIdx}_color`]}</p>
-                        )}
+                        {fieldError(`variant_${variantIdx}_color`)}
                       </div>
 
-                      {/* Variant MULTIPLE Images */}
+                      {/* Images */}
                       <div>
-                        <label className="text-gray-700 text-sm block mb-1">Variant Images * (Select Multiple)</label>
+                        <label htmlFor={`img-${variant.id}`} className="label">Photos of this color * (you can pick several)</label>
                         <input
+                          id={`img-${variant.id}`}
                           type="file"
                           accept="image/*"
                           multiple
                           onChange={(e) => {
                             handleVariantImagesChange(variant.id, e.target.files);
-                            e.target.value = ''; // Reset the input to allow re-selection
+                            e.target.value = ''; // dobara wahi file chunne ke liye reset
                           }}
-                          className="block w-full text-sm text-gray-600 mb-2"
+                          className="block w-full text-sm text-slate-600 file:mr-3 file:cursor-pointer file:rounded-md file:border file:border-slate-300 file:bg-white file:px-3 file:py-2 file:text-sm file:font-medium file:text-slate-700 hover:file:bg-slate-50"
                         />
-                        
-                        {/* Pehle se saved images (edit mode) */}
-                        {variant.existingImages.length > 0 && (
-                          <div className="flex flex-wrap gap-3 mt-3">
+
+                        {(variant.existingImages.length > 0 || variant.imagePreview.length > 0) && (
+                          <div className="mt-3 flex flex-wrap gap-3">
                             {variant.existingImages.map((url, idx) => (
-                              <div key={url} className="relative w-20 h-20">
-                                <img
-                                  src={`${BACKEND_URL}${url}`}
-                                  alt={`Saved ${idx + 1}`}
-                                  className="w-full h-full rounded-lg object-cover border border-gray-200"
-                                />
+                              <div key={url} className="relative h-20 w-20">
+                                <img src={`${BACKEND_URL}${url}`} alt={`Saved ${idx + 1}`} className="h-full w-full rounded-lg border border-slate-200 object-cover" />
                                 <button
                                   type="button"
                                   onClick={() => removeExistingImage(variant.id, idx)}
-                                  className="absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs shadow-md"
-                                  title="Remove saved image"
+                                  aria-label="Remove saved image"
+                                  className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-slate-800 text-white shadow hover:bg-red-600"
                                 >
-                                  ✕
+                                  <FiX size={14} />
                                 </button>
                               </div>
                             ))}
-                          </div>
-                        )}
-
-                        {/* Selected Images Preview Gallery */}
-                        {variant.imagePreview && variant.imagePreview.length > 0 && (
-                          <div className="flex flex-wrap gap-3 mt-3">
                             {variant.imagePreview.map((preview, idx) => (
-                              <div key={idx} className="relative w-20 h-20 group">
-                                <img
-                                  src={preview}
-                                  alt={`Preview ${idx + 1}`}
-                                  className="w-full h-full rounded-lg object-cover border border-gray-200"
-                                />
+                              <div key={preview} className="relative h-20 w-20">
+                                <img src={preview} alt={`New ${idx + 1}`} className="h-full w-full rounded-lg border border-brand-700 object-cover" />
                                 <button
                                   type="button"
                                   onClick={() => removeVariantImage(variant.id, idx)}
-                                  className="absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs shadow-md transition-opacity"
-                                  title="Remove image"
+                                  aria-label="Remove image"
+                                  className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-slate-800 text-white shadow hover:bg-red-600"
                                 >
-                                  ✕
+                                  <FiX size={14} />
                                 </button>
                               </div>
                             ))}
                           </div>
                         )}
-
-                        {errors[`variant_${variantIdx}_image`] && (
-                          <p className="text-red-500 text-xs mt-1">⚠️ {errors[`variant_${variantIdx}_image`]}</p>
-                        )}
+                        {fieldError(`variant_${variantIdx}_image`)}
                       </div>
 
                       {/* Sizes */}
                       <div>
-                        <div className="flex items-center justify-between mb-2">
-                          <label className="text-gray-700 text-sm font-semibold">
-                            Sizes for {variant.color || 'this color'} *
-                          </label>
-                          <button
-                            type="button"
-                            onClick={() => addSizeToVariant(variant.id)}
-                            className="text-green-600 text-xs hover:underline font-medium"
-                          >
-                            + Add Size
+                        <div className="mb-2 flex items-center justify-between">
+                          <p className="label !mb-0">Sizes for {variant.color || 'this color'} *</p>
+                          <button type="button" onClick={() => addSizeToVariant(variant.id)} className="link text-sm">
+                            + Add size
                           </button>
                         </div>
-
-                        {errors[`variant_${variantIdx}_sizes`] && (
-                          <p className="text-red-500 text-xs mb-2">⚠️ {errors[`variant_${variantIdx}_sizes`]}</p>
-                        )}
+                        {fieldError(`variant_${variantIdx}_sizes`)}
 
                         <div className="space-y-3">
-                          {variant.sizes.map((size, sizeIdx) => (
-                            <div key={sizeIdx} className="p-3 bg-gray-50 border border-gray-200 rounded-lg space-y-2">
+                          {variant.sizes.map((size, sizeIdx) => {
+                            const k = `variant_${variantIdx}_size_${sizeIdx}`;
+                            return (
+                              <div key={sizeIdx} className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                                <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
+                                  <div className="col-span-2 sm:col-span-1">
+                                    <label htmlFor={`${k}-size`} className="mb-1 block text-xs font-medium text-slate-600">Size *</label>
+                                    <input
+                                      id={`${k}-size`}
+                                      type="text"
+                                      value={size.size}
+                                      onChange={(e) => handleSizeChange(variant.id, sizeIdx, 'size', e.target.value)}
+                                      placeholder="S, M, L"
+                                      className={`input ${err(`${k}_size`)}`}
+                                    />
+                                  </div>
+                                  <div>
+                                    <label htmlFor={`${k}-cost`} className="mb-1 block text-xs font-medium text-slate-600">Cost</label>
+                                    <input
+                                      id={`${k}-cost`}
+                                      type="number"
+                                      value={size.costPrice}
+                                      onChange={(e) => handleSizeChange(variant.id, sizeIdx, 'costPrice', e.target.value)}
+                                      className="input"
+                                    />
+                                  </div>
+                                  <div>
+                                    <label htmlFor={`${k}-price`} className="mb-1 block text-xs font-medium text-slate-600">Price *</label>
+                                    <input
+                                      id={`${k}-price`}
+                                      type="number"
+                                      value={size.price}
+                                      onChange={(e) => handleSizeChange(variant.id, sizeIdx, 'price', e.target.value)}
+                                      className={`input ${err(`${k}_price`)}`}
+                                    />
+                                  </div>
+                                  <div>
+                                    <label htmlFor={`${k}-disc`} className="mb-1 block text-xs font-medium text-slate-600">Discount price</label>
+                                    <input
+                                      id={`${k}-disc`}
+                                      type="number"
+                                      value={size.discountPrice}
+                                      onChange={(e) => handleSizeChange(variant.id, sizeIdx, 'discountPrice', e.target.value)}
+                                      className={`input ${err(`${k}_discount`)}`}
+                                    />
+                                  </div>
+                                  <div>
+                                    <label htmlFor={`${k}-stock`} className="mb-1 block text-xs font-medium text-slate-600">Stock</label>
+                                    <input
+                                      id={`${k}-stock`}
+                                      type="number"
+                                      min="0"
+                                      value={size.stock}
+                                      onChange={(e) => handleSizeChange(variant.id, sizeIdx, 'stock', e.target.value)}
+                                      className={`input ${err(`${k}_stock`)}`}
+                                    />
+                                  </div>
+                                </div>
 
-                              {/* Size */}
-                              <input
-                                type="text"
-                                value={size.size}
-                                onChange={(e) => handleSizeChange(variant.id, sizeIdx, 'size', e.target.value)}
-                                placeholder="Size (S, M, L, XL)"
-                                className={`w-full px-2 py-1 rounded text-sm text-gray-900 outline-none border ${
-                                  errors[`variant_${variantIdx}_size_${sizeIdx}_size`] ? 'border-red-500' : 'border-gray-300'
-                                }`}
-                              />
+                                {fieldError(`${k}_size`)}
+                                {fieldError(`${k}_price`)}
+                                {fieldError(`${k}_discount`)}
+                                {fieldError(`${k}_stock`)}
 
-                              {/* Prices */}
-                              <div className="grid grid-cols-3 gap-2">
-                                <input
-                                  type="number"
-                                  value={size.costPrice}
-                                  onChange={(e) => handleSizeChange(variant.id, sizeIdx, 'costPrice', e.target.value)}
-                                  placeholder="Cost"
-                                  className="px-2 py-1 rounded text-sm text-gray-900 outline-none border border-gray-300"
-                                />
-                                <input
-                                  type="number"
-                                  value={size.price}
-                                  onChange={(e) => handleSizeChange(variant.id, sizeIdx, 'price', e.target.value)}
-                                  placeholder="Price *"
-                                  className={`px-2 py-1 rounded text-sm text-gray-900 outline-none border ${
-                                    errors[`variant_${variantIdx}_size_${sizeIdx}_price`] ? 'border-red-500' : 'border-gray-300'
-                                  }`}
-                                />
-                                <input
-                                  type="number"
-                                  value={size.discountPrice}
-                                  onChange={(e) => handleSizeChange(variant.id, sizeIdx, 'discountPrice', e.target.value)}
-                                  placeholder="Discount"
-                                  className="px-2 py-1 rounded text-sm text-gray-900 outline-none border border-gray-300"
-                                />
+                                {variant.sizes.length > 1 && (
+                                  <button
+                                    type="button"
+                                    onClick={() => removeSizeFromVariant(variant.id, sizeIdx)}
+                                    className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-slate-500 hover:text-red-600"
+                                  >
+                                    <FiTrash2 size={14} /> Remove size
+                                  </button>
+                                )}
                               </div>
-
-                              {errors[`variant_${variantIdx}_size_${sizeIdx}_discount`] && (
-                                <p className="text-red-500 text-xs">⚠️ {errors[`variant_${variantIdx}_size_${sizeIdx}_discount`]}</p>
-                              )}
-
-                              {/* Stock */}
-                              <input
-                                type="number"
-                                min="0"
-                                value={size.stock}
-                                onChange={(e) => handleSizeChange(variant.id, sizeIdx, 'stock', e.target.value)}
-                                placeholder="Stock"
-                                className={`w-full px-2 py-1 rounded text-sm text-gray-900 outline-none border ${
-                                  errors[`variant_${variantIdx}_size_${sizeIdx}_stock`] ? 'border-red-500' : 'border-gray-300'
-                                }`}
-                              />
-                              {errors[`variant_${variantIdx}_size_${sizeIdx}_stock`] && (
-                                <p className="text-red-500 text-xs">⚠️ {errors[`variant_${variantIdx}_size_${sizeIdx}_stock`]}</p>
-                              )}
-
-                              {variant.sizes.length > 1 && (
-                                <button
-                                  type="button"
-                                  onClick={() => removeSizeFromVariant(variant.id, sizeIdx)}
-                                  className="text-red-500 text-xs hover:text-red-700 font-medium pt-2 block"
-                                >
-                                  ✕ Remove Size
-                                </button>
-                              )}
-                            </div>
-                          ))}
+                            );
+                          })}
                         </div>
                       </div>
 
-                      {/* Remove Variant */}
                       {variants.length > 1 && (
                         <button
                           type="button"
                           onClick={() => removeVariant(variant.id)}
-                          className="w-full text-red-500 hover:text-red-700 font-medium text-sm py-2 border border-red-300 rounded-lg mt-4"
+                          className="btn-secondary w-full !text-red-600 hover:!bg-red-50"
                         >
-                          ✕ Remove This Color
+                          <FiTrash2 size={16} /> Remove this color
                         </button>
                       )}
                     </div>
                   )}
                 </div>
-              ))}
-            </div>
+              );
+            })}
           </div>
+        </Panel>
 
-          {/* Submit */}
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-3 rounded-lg bg-green-600 hover:bg-green-700 text-white font-bold text-lg transition disabled:opacity-50"
-          >
-            {loading ? '⏳ Saving...' : isEdit ? '✅ Save Changes' : '✅ Create Product'}
+        {/* SUBMIT */}
+        <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+          <button type="button" onClick={() => navigate('/admin/products')} className="btn-secondary btn-lg">
+            Cancel
           </button>
-        </form>
-      </div>
-    </div>
+          <button type="submit" disabled={loading} className="btn-primary btn-lg">
+            {loading ? 'Saving…' : isEdit ? 'Save changes' : 'Create product'}
+          </button>
+        </div>
+      </form>
+    </AdminPage>
   );
 }
 
