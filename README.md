@@ -155,55 +155,22 @@ flowchart TD
 ## Data model
 
 ```mermaid
-erDiagram
-    USER ||--o{ ORDER : places
-    USER ||--o| CART : has
-    CATEGORY ||--o{ PRODUCT : groups
-    PRODUCT ||--o{ VARIANT : "has colors"
-    VARIANT ||--o{ SIZE : "has sizes"
-    ORDER ||--|{ ORDER_ITEM : contains
-    CART ||--o{ CART_ITEM : contains
-    PRODUCT ||--o{ ORDER_ITEM : "snapshot of"
-    PRODUCT ||--o{ CART_ITEM : "refers to"
+flowchart TB
+    USER["<b>User</b><br/>name, email<br/>role: customer or admin<br/>phone"]
+    CART["<b>Cart</b><br/>items, last activity"]
+    ORDER["<b>Order</b><br/>status, payment method and status<br/>items price, shipping, total<br/>delivery address"]
+    CATEGORY["<b>Category</b><br/>name, slug, image"]
+    PRODUCT["<b>Product</b><br/>name, brand, unit type<br/>total stock, ratings, reviews"]
+    VARIANT["<b>Variant (color)</b><br/>color name, photos"]
+    SIZE["<b>Size</b><br/>size, price, cost price<br/>discount price, stock"]
 
-    USER {
-        string name
-        string email
-        string role "customer or admin"
-        string phone
-    }
-    CATEGORY {
-        string name
-        string slug
-        string image
-    }
-    PRODUCT {
-        string name
-        string brand
-        string unitType
-        number stock "total of all sizes"
-        number ratings
-        number numReviews
-    }
-    VARIANT {
-        string color
-        array images
-    }
-    SIZE {
-        string size
-        number price
-        number costPrice
-        number discountPrice
-        number stock
-    }
-    ORDER {
-        string orderStatus
-        string paymentMethod
-        string paymentStatus
-        number itemsPrice
-        number shippingPrice
-        number totalPrice
-    }
+    USER -- "has one" --> CART
+    USER -- "places many" --> ORDER
+    CATEGORY -- "groups many" --> PRODUCT
+    PRODUCT -- "has many colors" --> VARIANT
+    VARIANT -- "has many sizes" --> SIZE
+    CART -. "items refer to" .-> PRODUCT
+    ORDER -. "items keep a copy of" .-> PRODUCT
 ```
 
 Delivery is free for orders over Rs. 1,000, otherwise Rs. 200.
