@@ -1,9 +1,10 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import {
+  getCart,
   selectCartItems,
   selectTotalPrice,
 } from '../../redux/slices/cartSlice';
@@ -46,12 +47,21 @@ function CheckoutPage() {
     }
   });
 
+  // Page refresh par cart state khali hoti hai. Pehle server se cart lo,
+  // phir hi faisla karo ke cart khali hai ya nahi.
+  const [cartLoaded, setCartLoaded] = useState(false);
+  useEffect(() => {
+    let active = true;
+    dispatch(getCart()).finally(() => { if (active) setCartLoaded(true); });
+    return () => { active = false; };
+  }, [dispatch]);
+
   // ── Empty cart guard ───────────────────────
   // Order place hone ke baad cart khali hoti hai; us waqt /cart par na bhejo,
   // success wala effect /orders par le jayega.
   useEffect(() => {
-    if (!success && (!items || items.length === 0)) navigate('/cart');
-  }, [items, success, navigate]);
+    if (cartLoaded && !success && (!items || items.length === 0)) navigate('/cart');
+  }, [cartLoaded, items, success, navigate]);
 
   // ── Order success → Toast show karo aur orders page pr le jao ──
   useEffect(() => {
