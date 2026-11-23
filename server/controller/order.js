@@ -8,6 +8,7 @@ const {
   linesFromOrderItems,
 } = require('../utils/variants');
 const { parsePagination } = require('../utils/query');
+const { settlePaymentOnCancel } = require('./payment');
 
 const STATUSES = ['processing', 'shipped', 'delivered', 'cancelled'];
 
@@ -314,6 +315,7 @@ async function updateOrderStatus(req, res) {
 
     if (status === 'cancelled') {
       await releaseStock(linesFromOrderItems(order.orderItems));
+      await settlePaymentOnCancel(order);
     }
 
     order.UpdateOrderStatus(status);
@@ -359,6 +361,7 @@ async function cancelOrder(req, res) {
     }
 
     await releaseStock(linesFromOrderItems(order.orderItems));
+    await settlePaymentOnCancel(order);
 
     order.UpdateOrderStatus('cancelled');
     await order.save();

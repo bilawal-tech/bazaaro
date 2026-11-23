@@ -42,6 +42,10 @@ app.use(cors({
   credentials: true,
 }));
 
+// Stripe webhook ko raw body chahiye (signature check), is liye express.json se PEHLE.
+const { handleWebhook, startUnpaidOrderSweeper } = require('./controller/payment');
+app.post('/api/payments/webhook', express.raw({ type: 'application/json' }), handleWebhook);
+
 app.use(express.json({ limit: '100kb' }));
 
 // ── Rate limiting ─────────────────────────────
@@ -100,6 +104,9 @@ app.use('/api/cart', CartRoutes);
 const OrderRoutes = require('./routes/orderRoutes');
 app.use('/api/orders', OrderRoutes);
 
+const PaymentRoutes = require('./routes/paymentRoutes');
+app.use('/api/payments', PaymentRoutes);
+
 app.get('/', (req, res) => {
   res.send('Hello World!')
 })
@@ -134,4 +141,5 @@ app.use((err, req, res, next) => {
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
+  startUnpaidOrderSweeper();
 });

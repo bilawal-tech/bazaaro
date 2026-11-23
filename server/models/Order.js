@@ -79,11 +79,21 @@ const OrderSchema = new mongoose.Schema({
     },
     PaymentStatus: {
         type: String,
-        enum: ['Pending', 'Completed', 'Failed'],
+        enum: ['Pending', 'Completed', 'Failed', 'Refunded'],
         required: [true, 'Payment status is required'],
         default: 'Pending',
     },
     paidAt: {
+        type: Date,
+        default: null,
+    },
+    // Stripe (sirf 'Credit Card' orders ke liye)
+    paymentIntentId: {
+        type: String,
+        default: null,
+        index: true,
+    },
+    paymentFailedAt: {
         type: Date,
         default: null,
     },
@@ -143,8 +153,11 @@ OrderSchema.methods.UpdateOrderStatus = function (newStatus) {
 
     if (newStatus === 'delivered') {
         this.deliveredAt = Date.now();
-        this.PaymentStatus = 'Completed';
-        this.paidAt = Date.now();
+        // COD ka paisa delivery par milta hai; card ka webhook se pehle hi Completed hota hai
+        if (this.PaymentMethod === 'COD') {
+            this.PaymentStatus = 'Completed';
+            this.paidAt = Date.now();
+        }
     }
     if (newStatus === 'cancelled') {
         this.cancelledAt = Date.now();
