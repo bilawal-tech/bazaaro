@@ -183,6 +183,10 @@ function OrderDetailPage() {
               {current.PaymentMethod} · <span className="font-medium text-ink">{current.PaymentStatus}</span>
               {current.paidAt ? ` (${formatDateTime(current.paidAt)})` : ''}
             </p>
+            {isOwner && current.PaymentMethod === 'Credit Card' && status === 'processing' &&
+              ['Pending', 'Failed'].includes(current.PaymentStatus) && (
+              <Link to={`/pay/${current._id}`} className="btn-primary btn-sm mt-3">Pay now</Link>
+            )}
 
             {!isOwner && current.user && (
               <>

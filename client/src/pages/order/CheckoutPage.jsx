@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useEffect, useRef, useState } from 'react';
+import { useForm, useWatch } from 'react-hook-form';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
@@ -12,15 +12,16 @@ import {
   createOrder,
   selectOrderLoading,
   selectOrderSuccess,
+  selectOrder,
   clearSuccess,
 } from '../../redux/slices/orderSlice';
 import { selectUser } from '../../redux/slices/authSlice';
 
-// Abhi sirf COD chalta hai (server par koi payment gateway nahi).
-// Stripe lagne par baqi methods ke liye enabled: true kar dena.
+// COD aur card (Stripe) chalte hain. Stripe Pakistan ke local methods
+// (JazzCash, Easypaisa, bank transfer) support nahi karta, is liye woh abhi band hain.
 const PAYMENT_METHODS = [
   { value: 'COD',           label: 'Cash on delivery',    hint: 'Pay when your order arrives', enabled: true  },
-  { value: 'Credit Card',   label: 'Credit or debit card', hint: 'Coming soon',                 enabled: false },
+  { value: 'Credit Card',   label: 'Credit or debit card', hint: 'Pay securely online',         enabled: true  },
   { value: 'Jazzcash',      label: 'JazzCash',            hint: 'Coming soon',                 enabled: false },
   { value: 'Easypaisa',     label: 'Easypaisa',           hint: 'Coming soon',                 enabled: false },
   { value: 'Bank Transfer', label: 'Bank transfer',       hint: 'Coming soon',                 enabled: false },
@@ -33,11 +34,13 @@ function CheckoutPage() {
   const totalPrice = useSelector(selectTotalPrice);
   const loading    = useSelector(selectOrderLoading);
   const success    = useSelector(selectOrderSuccess);
+  const placedOrder = useSelector(selectOrder);
   const user       = useSelector(selectUser);
 
   const {
     register,
     handleSubmit,
+    control,
     formState: { errors },
   } = useForm({
     defaultValues: {
@@ -47,9 +50,13 @@ function CheckoutPage() {
     }
   });
 
+  const paymentMethod = useWatch({ control, name: 'PaymentMethod', defaultValue: 'COD' });
+
   // Page refresh par cart state khali hoti hai. Pehle server se cart lo,
   // phir hi faisla karo ke cart khali hai ya nahi.
   const [cartLoaded, setCartLoaded] = useState(false);
+  // Order ban jane ke baad redirect chal raha ho to khali-cart guard beech mein na aaye
+  const redirecting = useRef(false);
   useEffect(() => {
     let active = true;
     dispatch(getCart()).finally(() => { if (active) setCartLoaded(true); });
@@ -60,17 +67,24 @@ function CheckoutPage() {
   // Order place hone ke baad cart khali hoti hai; us waqt /cart par na bhejo,
   // success wala effect /orders par le jayega.
   useEffect(() => {
+    if (redirecting.current) return;
     if (cartLoaded && !success && (!items || items.length === 0)) navigate('/cart');
   }, [cartLoaded, items, success, navigate]);
 
   // ── Order success → Toast show karo aur orders page pr le jao ──
   useEffect(() => {
     if (success) {
-      toast.success('Order placed');
+      redirecting.current = true;
       dispatch(clearSuccess());
-      navigate('/orders');
+      if (placedOrder?.PaymentMethod === 'Credit Card') {
+        // Card order: pehle paisa, phir order confirm
+        navigate(`/pay/${placedOrder._id}`, { replace: true });
+      } else {
+        toast.success('Order placed');
+        navigate('/orders');
+      }
     }
-  }, [success, dispatch, navigate]);
+  }, [success, placedOrder, dispatch, navigate]);
 
   // ── Shipping cost ──────────────────────────
   const shippingPrice = totalPrice > 1000 ? 0 : 200;
@@ -219,7 +233,7 @@ function CheckoutPage() {
                 </div>
 
                 <button type="submit" disabled={loading} className="btn-primary btn-lg mt-5 w-full">
-                  {loading ? 'Placing order…' : 'Place order'}
+                  {loading ? 'Placing order…' : paymentMethod === 'Credit Card' ? 'Continue to payment' : 'Place order'}
                 </button>
               </div>
             </aside>

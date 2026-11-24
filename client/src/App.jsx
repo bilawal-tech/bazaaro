@@ -18,6 +18,7 @@ import ShopPage from "./pages/shop/ShopPage";
 import ProductDetailPage from "./pages/shop/ProductDetailPage";
 import CartPage from "./pages/cart/CartPage";
 import CheckoutPage from "./pages/order/CheckoutPage";
+import PaymentPage from "./pages/order/PaymentPage";
 import OrderHistoryPage from "./pages/order/OrderHistoryPage";
 import OrderDetailPage from "./pages/order/OrderDetailPage";
 import ProfilePage from "./pages/auth/ProfilePage";
@@ -55,6 +56,7 @@ function App() {
             <Route element={<ProtectedRoute />}>
                <Route path="/cart" element={<CartPage />} /> 
               <Route path="/checkout" element={<CheckoutPage />} /> 
+              <Route path="/pay/:orderId" element={<PaymentPage />} />
               <Route path="/orders" element={<OrderHistoryPage />} /> 
               <Route path="/orders/:id" element={<OrderDetailPage />} />
               <Route path="/profile" element={<ProfilePage />} />
