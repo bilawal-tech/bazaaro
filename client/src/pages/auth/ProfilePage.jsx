@@ -124,6 +124,8 @@ function ProfilePage() {
             </div>
           </section>
 
+          {/* Google-only account ka password nahi hota */}
+          {profile?.hasPassword !== false && (
           <section className="card space-y-4 p-5 sm:p-6">
             <div>
               <h2 className="text-lg font-semibold">Change password</h2>
@@ -170,6 +172,7 @@ function ProfilePage() {
               {errors.confirmPassword && <p className="field-error">{errors.confirmPassword.message}</p>}
             </div>
           </section>
+          )}
 
           <button type="submit" disabled={isSubmitting} className="btn-primary btn-lg w-full">
             {isSubmitting ? 'Saving…' : 'Save changes'}

@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form';
 import { useDispatch, useSelector } from 'react-redux';
 import { Link, useNavigate } from 'react-router-dom';
 import AuthShell from '../../components/common/AuthShell';
+import GoogleButton from '../../components/common/GoogleButton';
 import {
   registerUser,
   selectUser,
@@ -151,6 +152,8 @@ function RegisterPage() {
           {loading ? 'Creating account…' : 'Create account'}
         </button>
       </form>
+
+      <GoogleButton />
     </AuthShell>
   );
 }

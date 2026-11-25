@@ -36,6 +36,22 @@ export const loginUser = createAsyncThunk(
   }
 );
 
+//google login action: credential = Google ka ID token
+export const googleLogin = createAsyncThunk(
+  'auth/google',
+  async (body, { rejectWithValue }) => {
+    try {
+      const { data } = await API.post('/auth/google', body);
+      localStorage.setItem('authUser', JSON.stringify(data));
+      return data;
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data?.message || 'Google sign-in failed'
+      );
+    }
+  }
+);
+
 //getProfile action
 export const getProfile = createAsyncThunk(
   'auth/getProfile',
@@ -140,6 +156,21 @@ const authSlice = createSlice({
         state.loading = false;
         state.error   = action.payload;
         state.success = false;
+      })
+
+    //Google login (success flag nahi chhedte, warna Register page /login par bhej deta hai)
+    builder
+      .addCase(googleLogin.pending, (state) => {
+        state.loading = true;
+        state.error   = null;
+      })
+      .addCase(googleLogin.fulfilled, (state, action) => {
+        state.loading = false;
+        state.user    = action.payload;
+      })
+      .addCase(googleLogin.rejected, (state, action) => {
+        state.loading = false;
+        state.error   = action.payload;
       })
 
     //Get Profile

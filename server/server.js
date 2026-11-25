@@ -83,9 +83,27 @@ const registerLimiter = rateLimit({
   message: { success: false, message: 'Too many accounts created from this IP, please try again later' },
 });
 
+// Forgot password: email bombing se rokta hai
+const forgotLimiter = rateLimit({
+  ...limiterBase,
+  windowMs: 60 * 60 * 1000,
+  limit: 5,
+  message: { success: false, message: 'Too many reset requests, please try again later' },
+});
+
+// Reset link ke token guess karne se rokta hai
+const resetLimiter = rateLimit({
+  ...limiterBase,
+  windowMs: 15 * 60 * 1000,
+  limit: 10,
+  message: { success: false, message: 'Too many attempts, please try again later' },
+});
+
 app.use('/api', apiLimiter);
 app.use('/api/auth/login', loginLimiter);
 app.use('/api/auth/register', registerLimiter);
+app.use('/api/auth/forgot-password', forgotLimiter);
+app.use('/api/auth/reset-password', resetLimiter);
 
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 

@@ -24,6 +24,8 @@ import OrderDetailPage from "./pages/order/OrderDetailPage";
 import ProfilePage from "./pages/auth/ProfilePage";
 import LoginPage from "./pages/auth/LoginPage";
 import RegisterPage from "./pages/auth/RegisterPage";
+import ForgotPasswordPage from "./pages/auth/ForgotPasswordPage";
+import ResetPasswordPage from "./pages/auth/ResetPasswordPage";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminProducts from "./pages/admin/AdminProducts";
 import CreateProductPage from "./pages/admin/createProductPage"; 
@@ -50,6 +52,8 @@ function App() {
             <Route path="/product/:id" element={<ProductDetailPage />} />
             <Route path="/login" element={<LoginPage />} />
              <Route path="/register" element={<RegisterPage />} />
+            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+            <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
             {/* Public Routes */}
 
             {/* ── Protected Routes ────────────── */}

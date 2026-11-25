@@ -3,6 +3,9 @@ const router  = express.Router();
 const {
   register,
   login,
+  googleLogin,
+  forgotPassword,
+  resetPassword,
   getProfile,
   getallUsers,
   deleteUser,
@@ -13,6 +16,9 @@ const { protect, adminOnly } = require('../middleware/authMiddleware');
 
 router.post('/register', register);
 router.post('/login',    login);
+router.post('/google',   googleLogin);
+router.post('/forgot-password', forgotPassword);
+router.post('/reset-password/:token', resetPassword);
 
 // Protected Routes — Login Zaroori 
 router.get ('/profile', protect, getProfile);

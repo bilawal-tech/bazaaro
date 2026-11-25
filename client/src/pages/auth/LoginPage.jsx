@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form';
 import { useDispatch, useSelector } from 'react-redux';
 import { Link, useNavigate } from 'react-router-dom';
 import AuthShell from '../../components/common/AuthShell';
+import GoogleButton from '../../components/common/GoogleButton';
 import {
   loginUser,
   selectUser,
@@ -69,7 +70,10 @@ function LoginPage() {
         </div>
 
         <div>
-          <label htmlFor="password" className="label">Password</label>
+          <div className="flex items-center justify-between">
+            <label htmlFor="password" className="label">Password</label>
+            <Link to="/forgot-password" className="link text-sm">Forgot password?</Link>
+          </div>
           <input
             id="password"
             type="password"
@@ -88,6 +92,8 @@ function LoginPage() {
           {loading ? 'Signing in…' : 'Sign in'}
         </button>
       </form>
+
+      <GoogleButton />
     </AuthShell>
   );
 }

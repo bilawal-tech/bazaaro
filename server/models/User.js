@@ -17,20 +17,36 @@ const UserSchema = new mongoose.Schema(
     // Purani regex 4+ letter TLD (.store, .info) aur + wale emails reject karti thi
     match: [/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/, 'Please add a valid email']
     },
+    // Google se aaye users ka password nahi hota
     password: {
       type: String,
-      required: [true, 'Please enter your password'],
+      required: [function () { return !this.googleId; }, 'Please enter your password'],
       minlength: 6,
        select: false,
+    },
+    googleId: {
+      type: String,
+      unique: true,
+      sparse: true,
+    },
+    // Forgot password: token ka sirf SHA-256 hash DB mein, asli token email mein
+    resetPasswordToken: {
+      type: String,
+      select: false,
+    },
+    resetPasswordExpires: {
+      type: Date,
+      select: false,
     },
     role: {
       type: String,
       enum: ['customer', 'admin'],
       default: 'customer',
     },
+    // Google users ke paas phone nahi hota; profile ya checkout par baad mein dete hain
     phone: {
       type: String,
-      required: [true, 'Please enter your phone number'],
+      required: [function () { return !this.googleId; }, 'Please enter your phone number'],
       trim: true,
     },
     address: {
@@ -66,6 +82,7 @@ UserSchema.pre('save', async function () {
 });
 // password compare..
 UserSchema.methods.matchPassword = async function (enteredPassword) {
+  if (!this.password) return false; // Google-only account
   return await bcrypt.compare(enteredPassword, this.password);
 };
 
