@@ -11,6 +11,7 @@ import {
 import { selectCategories } from '../../redux/slices/categorySlice';
 import { selectUser } from '../../redux/slices/authSlice';
 import ProductCard from '../../components/products/ProductCard';
+import { HOME_GRID } from '../../components/products/productGrid';
 import { ProductGridSkeleton } from '../../components/common/Skeleton';
 import EmptyState from '../../components/common/EmptyState';
 import API from '../../services/api';
@@ -142,7 +143,7 @@ function HomePage() {
         {!loaded || (loading && !products?.length) ? (
           <ProductGridSkeleton count={8} />
         ) : products && products.length > 0 ? (
-          <div className="grid grid-cols-2 gap-3 sm:gap-5 md:grid-cols-3 lg:grid-cols-4">
+          <div className={HOME_GRID}>
             {products.map((product) => (
               <ProductCard key={product._id} product={product} />
             ))}
@@ -164,7 +165,7 @@ function HomePage() {
               View all <FiArrowRight size={16} />
             </Link>
           </div>
-          <div className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-4">
+          <div className={HOME_GRID}>
             {deals.map((product) => <ProductCard key={product._id} product={product} />)}
           </div>
         </section>
@@ -177,7 +178,7 @@ function HomePage() {
             <h2 className="section-title">Top rated</h2>
             <p className="mt-1 text-sm text-ink-soft">Highest rated by customers</p>
           </div>
-          <div className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-4">
+          <div className={HOME_GRID}>
             {topRated.map((product) => <ProductCard key={product._id} product={product} />)}
           </div>
         </section>

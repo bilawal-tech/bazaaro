@@ -17,6 +17,7 @@ import {
 import ProductCard from '../../components/products/ProductCard';
 import { ProductGridSkeleton } from '../../components/common/Skeleton';
 import EmptyState from '../../components/common/EmptyState';
+import { SHOP_GRID } from '../../components/products/productGrid';
 import Pagination  from '../../components/common/Pagination';
 
 const DEFAULT_FILTERS = {
@@ -216,9 +217,9 @@ function ShopPage() {
             )}
 
             {!loaded || loading ? (
-              <ProductGridSkeleton count={filters.limit || 12} className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-3" />
+              <ProductGridSkeleton count={filters.limit || 12} className={SHOP_GRID} />
             ) : products.length > 0 ? (
-              <div className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-3">
+              <div className={SHOP_GRID}>
                 {products.map(product => (
                   <ProductCard key={product._id} product={product} />
                 ))}

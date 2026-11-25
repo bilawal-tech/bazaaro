@@ -38,7 +38,7 @@ function ProductDetailPage() {
 
   // ── On Mount ───────────────────────────────
   useEffect(() => {
-    window.scrollTo(0, 0);
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
     if (id) {
       dispatch(getSingleProduct(id));
     }

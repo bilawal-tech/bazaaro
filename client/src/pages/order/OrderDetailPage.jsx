@@ -14,12 +14,10 @@ import { selectUser } from '../../redux/slices/authSlice';
 import Loader from '../../components/common/Loader';
 import OrderStatusBadge from '../../components/common/OrderStatusBadge';
 import ConfirmDialog from '../../components/common/ConfirmDialog';
-import { STATUS_META } from '../../utils/orderStatus';
-import { FiArrowLeft, FiCheck } from 'react-icons/fi';
+import { FiArrowLeft } from 'react-icons/fi';
 import { getImageUrl } from '../../utils/imageUrl';
 import CheckoutSteps from '../../components/common/CheckoutSteps';
-
-const STEPS = ['processing', 'shipped', 'delivered'];
+import OrderTimeline from '../../components/common/OrderTimeline';
 
 const money = (n) => `Rs. ${Number(n || 0).toLocaleString()}`;
 
@@ -75,7 +73,6 @@ function OrderDetailPage() {
   const status = current.orderStatus?.toLowerCase() || 'processing';
   const isOwner = current.user?._id === myId;
   const canCancel = isOwner && status === 'processing';
-  const stepIndex = STEPS.indexOf(status);
 
   const confirmCancel = async () => {
     setShowCancel(false);
@@ -112,35 +109,12 @@ function OrderDetailPage() {
             This order was cancelled{current.cancelledAt ? ` on ${formatDateTime(current.cancelledAt)}` : ''}.
           </div>
         ) : (
-          <div className="card mb-6 p-5">
-            <ol className="flex items-center">
-              {STEPS.map((step, i) => {
-                const done = i <= stepIndex;
-                return (
-                  <li key={step} className="flex flex-1 items-center last:flex-none">
-                    <div className="flex flex-col items-center">
-                      <span
-                        className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-semibold ${
-                          done ? 'bg-brand-800 text-white' : 'bg-surface text-ink-faint'
-                        }`}
-                      >
-                        {done ? <FiCheck size={16} /> : i + 1}
-                      </span>
-                      <span className={`mt-1.5 text-xs font-medium ${done ? 'text-brand-800' : 'text-ink-faint'}`}>
-                        {STATUS_META[step].label}
-                      </span>
-                    </div>
-                    {i < STEPS.length - 1 && (
-                      <span className={`mx-2 mb-5 h-0.5 flex-1 ${i < stepIndex ? 'bg-brand-800' : 'bg-line'}`} />
-                    )}
-                  </li>
-                );
-              })}
-            </ol>
-            {current.deliveredAt && (
-              <p className="mt-3 text-sm text-ink-soft">Delivered on {formatDateTime(current.deliveredAt)}</p>
-            )}
-          </div>
+          <OrderTimeline
+            status={status}
+            createdAt={current.createdAt}
+            shippedAt={current.shippedAt}
+            deliveredAt={current.deliveredAt}
+          />
         )}
 
         {/* Items */}

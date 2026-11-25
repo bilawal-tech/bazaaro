@@ -1,6 +1,8 @@
 // Loading skeletons: spinner ki jagah wahi shakal ke khali boxes jo load hote hi bhar jate hain.
 // Sab ek hi animate-pulse block par bante hain; screen reader ko sirf ek "Loading" sunai deta hai.
 
+import { HOME_GRID } from '../products/productGrid';
+
 export function Skeleton({ className = '' }) {
   return <div aria-hidden="true" className={`animate-pulse rounded-md bg-line ${className}`} />;
 }
@@ -10,21 +12,18 @@ export function ProductCardSkeleton() {
   return (
     <div className="card flex flex-col overflow-hidden" aria-hidden="true">
       <Skeleton className="aspect-square w-full rounded-none" />
-      <div className="flex flex-1 flex-col p-4">
+      <div className="flex flex-1 flex-col p-3">
         <Skeleton className="h-3.5 w-11/12" />
         <Skeleton className="mt-2 h-3.5 w-2/3" />
         <Skeleton className="mt-5 h-5 w-1/3" />
-        <Skeleton className="mt-3 h-10 w-full rounded-lg" />
+        <Skeleton className="mt-2.5 h-9 w-full rounded-lg" />
       </div>
     </div>
   );
 }
 
 // className mein wahi grid classes dein jo asli grid mein hain
-export function ProductGridSkeleton({
-  count = 8,
-  className = 'grid grid-cols-2 gap-3 sm:gap-5 md:grid-cols-3 lg:grid-cols-4',
-}) {
+export function ProductGridSkeleton({ count = 8, className = HOME_GRID }) {
   return (
     <div className={className} role="status" aria-label="Loading products">
       <span className="sr-only">Loading products</span>

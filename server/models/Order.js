@@ -123,6 +123,11 @@ const OrderSchema = new mongoose.Schema({
         default: 'processing',
         lowercase: true,
     },
+    // Order tracking timeline mein "Shipped" ka waqt dikhane ke liye
+    shippedAt: {
+        type: Date,
+        default: null,
+    },
     deliveredAt: {
         type: Date,
         default: null,
@@ -151,6 +156,9 @@ OrderSchema.methods.calculateTotals = function () {
 OrderSchema.methods.UpdateOrderStatus = function (newStatus) {
     this.orderStatus = newStatus;
 
+    if (newStatus === 'shipped') {
+        this.shippedAt = Date.now();
+    }
     if (newStatus === 'delivered') {
         this.deliveredAt = Date.now();
         // COD ka paisa delivery par milta hai; card ka webhook se pehle hi Completed hota hai

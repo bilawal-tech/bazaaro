@@ -66,7 +66,7 @@ function ProductCard({ product }) {
       </Link>
 
       {/* Info */}
-      <div className="flex flex-1 flex-col p-4">
+      <div className="flex flex-1 flex-col p-3">
         <Link to={`/product/${product._id}`}>
           <h3 className="line-clamp-2 min-h-[2.5rem] text-sm font-medium leading-snug text-ink transition hover:text-brand-700">
             {product.name}
@@ -83,8 +83,8 @@ function ProductCard({ product }) {
         )}
 
         <div className="mt-auto pt-3">
-          <div className="mb-3 flex flex-wrap items-baseline gap-x-2">
-            <span className="text-lg font-semibold text-ink">
+          <div className="mb-2.5 flex flex-wrap items-baseline gap-x-2">
+            <span className="text-base font-semibold text-ink">
               {showFrom && <span className="mr-1 text-xs font-normal text-ink-faint">From</span>}
               Rs. {displayPrice?.toLocaleString()}
             </span>
@@ -99,7 +99,7 @@ function ProductCard({ product }) {
             type="button"
             onClick={handleAddToCart}
             disabled={outOfStock}
-            className="btn-primary w-full"
+            className="btn-primary w-full py-2"
           >
             {outOfStock ? 'Unavailable' : hasVariants ? 'Select options' : 'Add to cart'}
           </button>
