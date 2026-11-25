@@ -11,7 +11,8 @@ import {
 import { selectCategories } from '../../redux/slices/categorySlice';
 import { selectUser } from '../../redux/slices/authSlice';
 import ProductCard from '../../components/products/ProductCard';
-import Loader from '../../components/common/Loader';
+import { ProductGridSkeleton } from '../../components/common/Skeleton';
+import EmptyState from '../../components/common/EmptyState';
 import API from '../../services/api';
 import { getImageUrl } from '../../utils/imageUrl';
 
@@ -31,11 +32,13 @@ function HomePage() {
   const categories    = useSelector(selectCategories);
   const user          = useSelector(selectUser);
 
+  // Pehli fetch ke baad hi "No products" dikhao, warna pehle frame par jhalak aati hai
+  const [loaded, setLoaded]   = useState(false);
   const [deals, setDeals]       = useState([]);
   const [topRated, setTopRated]  = useState([]);
 
   useEffect(() => {
-    dispatch(getAllProducts({ limit: 8 }));
+    dispatch(getAllProducts({ limit: 8 })).finally(() => setLoaded(true));
   }, [dispatch]);
 
   // Deals aur top rated: server par discount filter nahi, is liye taaza products mein se
@@ -50,8 +53,6 @@ function HomePage() {
       .catch(() => {});
     return () => { cancelled = true; };
   }, []);
-
-  if (loading) return <Loader />;
 
   // Sirf wo baatein jo store mein sach mein hain:
   // product count database se, delivery rule Order model se (1000 se upar free), COD checkout par.
@@ -138,17 +139,16 @@ function HomePage() {
           </Link>
         </div>
 
-        {products && products.length > 0 ? (
+        {!loaded || (loading && !products?.length) ? (
+          <ProductGridSkeleton count={8} />
+        ) : products && products.length > 0 ? (
           <div className="grid grid-cols-2 gap-3 sm:gap-5 md:grid-cols-3 lg:grid-cols-4">
             {products.map((product) => (
               <ProductCard key={product._id} product={product} />
             ))}
           </div>
         ) : (
-          <div className="rounded-xl border border-line bg-surface py-16 text-center">
-            <p className="font-medium text-ink">No products yet</p>
-            <p className="mt-1 text-sm text-ink-soft">Check back soon.</p>
-          </div>
+          <EmptyState icon={<FiPackage size={28} />} title="No products yet" text="New products are on the way. Please check back soon." />
         )}
       </section>
 

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import toast from 'react-hot-toast';
 import {
@@ -17,6 +17,7 @@ import ConfirmDialog from '../../components/common/ConfirmDialog';
 import { STATUS_META } from '../../utils/orderStatus';
 import { FiArrowLeft, FiCheck } from 'react-icons/fi';
 import { getImageUrl } from '../../utils/imageUrl';
+import CheckoutSteps from '../../components/common/CheckoutSteps';
 
 const STEPS = ['processing', 'shipped', 'delivered'];
 
@@ -35,6 +36,9 @@ const formatDateTime = (d) =>
 
 function OrderDetailPage() {
   const { id } = useParams();
+  // Payment ke baad /orders/:id?paid=1 par aate hain: progress line mukammal dikhao
+  const [searchParams] = useSearchParams();
+  const justPaid = searchParams.get('paid') === '1';
   const dispatch = useDispatch();
 
   const order = useSelector(selectOrder);
@@ -86,6 +90,8 @@ function OrderDetailPage() {
   return (
     <div className="bg-surface">
       <div className="container-page max-w-4xl py-8 sm:py-12">
+
+        {justPaid && status !== 'cancelled' && <CheckoutSteps current={3} />}
 
         <Link to="/orders" className="inline-flex items-center gap-1.5 text-sm font-medium text-ink-soft hover:text-brand-700">
           <FiArrowLeft size={16} /> Back to orders

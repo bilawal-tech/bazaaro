@@ -9,7 +9,8 @@ import {
   selectTotalPages,
   selectCurrentPage,
 } from '../../redux/slices/orderSlice';
-import Loader from '../../components/common/Loader';
+import { OrdersSkeleton } from '../../components/common/Skeleton';
+import EmptyState from '../../components/common/EmptyState';
 import OrderStatusBadge from '../../components/common/OrderStatusBadge';
 import ConfirmDialog from '../../components/common/ConfirmDialog';
 import Pagination from '../../components/common/Pagination';
@@ -30,8 +31,11 @@ function OrderHistoryPage() {
   const [selectedOrderId, setSelectedOrderId] = useState(null);
 
   // ── Fetch Orders ───────────────────────────
+  // Pehli load ke baad hi "No orders yet" dikhao, warna pehle frame par jhalak aati hai
+  const [loaded, setLoaded] = useState(false);
+
   useEffect(() => {
-    dispatch(getMyOrders({ page, limit: 5 }));
+    dispatch(getMyOrders({ page, limit: 5 })).finally(() => setLoaded(true));
   }, [dispatch, page]);
 
   // ── Cancel popup kholo ─────────────────────
@@ -49,18 +53,18 @@ function OrderHistoryPage() {
     }
   };
 
-  if (loading) return <Loader />;
+  if (!loaded || loading) return <OrdersSkeleton />;
 
   if (!orders || orders.length === 0) {
     return (
-      <div className="container-page flex min-h-[60vh] flex-col items-center justify-center py-16 text-center">
-        <span className="flex h-16 w-16 items-center justify-center rounded-full bg-brand-100 text-brand-800">
-          <FiPackage size={28} />
-        </span>
-        <h1 className="mt-5 text-2xl font-semibold">No orders yet</h1>
-        <p className="mt-2 max-w-sm text-ink-soft">When you place an order, it will show up here.</p>
-        <Link to="/shop" className="btn-primary btn-lg mt-6">Start shopping</Link>
-      </div>
+      <EmptyState
+        fullPage
+        icon={<FiPackage size={28} />}
+        title="No orders yet"
+        text="When you place an order, it will show up here."
+      >
+        <Link to="/shop" className="btn-primary btn-lg">Start shopping</Link>
+      </EmptyState>
     );
   }
 

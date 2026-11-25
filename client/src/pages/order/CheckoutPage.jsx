@@ -16,6 +16,7 @@ import {
   clearSuccess,
 } from '../../redux/slices/orderSlice';
 import { selectUser } from '../../redux/slices/authSlice';
+import CheckoutSteps from '../../components/common/CheckoutSteps';
 
 // COD aur card (Stripe) chalte hain. Stripe Pakistan ke local methods
 // (JazzCash, Easypaisa, bank transfer) support nahi karta, is liye woh abhi band hain.
@@ -136,6 +137,8 @@ function CheckoutPage() {
   return (
     <div className="bg-surface">
       <div className="container-page py-8 sm:py-12">
+
+        <CheckoutSteps current={1} />
 
         <h1 className="page-title mb-6">Checkout</h1>
 

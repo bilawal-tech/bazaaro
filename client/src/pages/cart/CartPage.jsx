@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import toast from 'react-hot-toast';
@@ -15,7 +15,9 @@ import {
   updateItemLocally,
 } from '../../redux/slices/cartSlice';
 import { selectUser } from '../../redux/slices/authSlice';
-import Loader from '../../components/common/Loader';
+import { CartSkeleton } from '../../components/common/Skeleton';
+import EmptyState from '../../components/common/EmptyState';
+import CheckoutSteps from '../../components/common/CheckoutSteps';
 
 function CartPage() {
   const dispatch       = useDispatch();
@@ -32,8 +34,11 @@ function CartPage() {
   // base url
   const BACKEND_URL = "http://localhost:5000";
 
+  // Pehli load ke baad hi "cart khali hai" dikhao. Quantity badalne par poora page skeleton na bane.
+  const [loaded, setLoaded] = useState(false);
+
   useEffect(() => {
-    if (user) dispatch(getCart());
+    if (user) dispatch(getCart()).finally(() => setLoaded(true));
   }, [dispatch, user]);
 
   // quantity manage
@@ -93,18 +98,18 @@ function CartPage() {
     return `${BACKEND_URL}${cleanPath}`;
   };
 
-  if (loading) return <Loader />;
+  if (user && (!loaded || (loading && items.length === 0))) return <CartSkeleton />;
 
   if (items.length === 0) {
     return (
-      <div className="container-page flex min-h-[60vh] flex-col items-center justify-center py-16 text-center">
-        <span className="flex h-16 w-16 items-center justify-center rounded-full bg-brand-100 text-brand-800">
-          <FiShoppingCart size={28} />
-        </span>
-        <h1 className="mt-5 text-2xl font-semibold">Your cart is empty</h1>
-        <p className="mt-2 max-w-sm text-ink-soft">Add a few products and they will show up here.</p>
-        <Link to="/shop" className="btn-primary btn-lg mt-6">Start shopping</Link>
-      </div>
+      <EmptyState
+        fullPage
+        icon={<FiShoppingCart size={28} />}
+        title="Your cart is empty"
+        text="Add a few products and they will show up here."
+      >
+        <Link to="/shop" className="btn-primary btn-lg">Start shopping</Link>
+      </EmptyState>
     );
   }
 
@@ -114,6 +119,8 @@ function CartPage() {
   return (
     <div className="bg-surface">
       <div className="container-page py-8 sm:py-12">
+
+        <CheckoutSteps current={0} />
 
         <div className="mb-6 flex items-end justify-between gap-4">
           <div>

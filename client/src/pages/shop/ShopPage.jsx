@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useSearchParams } from 'react-router-dom';
-import { FiSliders, FiX } from 'react-icons/fi';
+import { FiSliders, FiX, FiSearch, FiPackage } from 'react-icons/fi';
 import {
   getAllProducts,
   selectProducts,
@@ -15,7 +15,8 @@ import {
   selectCategories,
 } from '../../redux/slices/categorySlice';
 import ProductCard from '../../components/products/ProductCard';
-import Loader      from '../../components/common/Loader';
+import { ProductGridSkeleton } from '../../components/common/Skeleton';
+import EmptyState from '../../components/common/EmptyState';
 import Pagination  from '../../components/common/Pagination';
 
 const DEFAULT_FILTERS = {
@@ -63,8 +64,11 @@ function ShopPage() {
     setFilters(prev => ({ ...prev, search: urlSearch, category: urlCategory, sort: urlSort, page: 1 }));
   }
 
+  // Pehli fetch ke baad hi "kuch nahi mila" dikhao, warna pehle frame par jhalak aati hai
+  const [loaded, setLoaded] = useState(false);
+
   useEffect(() => {
-    dispatch(getAllProducts(filters));
+    dispatch(getAllProducts(filters)).finally(() => setLoaded(true));
     dispatch(getAllCategories());
   }, [dispatch, filters]);
 
@@ -211,8 +215,8 @@ function ShopPage() {
               </div>
             )}
 
-            {loading ? (
-              <Loader />
+            {!loaded || loading ? (
+              <ProductGridSkeleton count={filters.limit || 12} className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-3" />
             ) : products.length > 0 ? (
               <div className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-3">
                 {products.map(product => (
@@ -220,12 +224,19 @@ function ShopPage() {
                 ))}
               </div>
             ) : (
-              <div className="rounded-xl border border-line bg-surface py-16 text-center">
-                <p className="font-medium text-ink">No products matched your filters</p>
-                <button type="button" onClick={resetFilters} className="link mt-2 text-sm">
-                  Clear filters
-                </button>
-              </div>
+              activeFilterCount > 0 ? (
+                <EmptyState
+                  icon={<FiSearch size={28} />}
+                  title={filters.search ? `No results for "${filters.search}"` : 'No products matched your filters'}
+                  text="Check the spelling, try a different word, or remove some filters."
+                >
+                  <button type="button" onClick={resetFilters} className="btn-primary">
+                    Clear filters
+                  </button>
+                </EmptyState>
+              ) : (
+                <EmptyState icon={<FiPackage size={28} />} title="No products yet" text="New products are on the way. Please check back soon." />
+              )
             )}
 
             <Pagination page={currentPage} totalPages={totalPages} onChange={handlePageChange} />

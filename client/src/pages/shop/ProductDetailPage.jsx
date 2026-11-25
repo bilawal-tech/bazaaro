@@ -12,7 +12,7 @@ import {
 } from '../../redux/slices/productSlice';
 import { addToCart } from '../../redux/slices/cartSlice';
 import { selectUser } from '../../redux/slices/authSlice';
-import Loader from '../../components/common/Loader';
+import { ProductPageSkeleton } from '../../components/common/Skeleton';
 import ProductGallery from '../../components/products/ProductGallery';
 
 function ProductDetailPage() {
@@ -103,7 +103,7 @@ function ProductDetailPage() {
     return `${BACKEND_URL}${cleanPath}`;
   };
 
-  if (loading) return <Loader />;
+  if (loading) return <ProductPageSkeleton />;
   if (!product || !product._id) {
     return (
       <div className="container-page flex min-h-[50vh] flex-col items-center justify-center py-16 text-center">
