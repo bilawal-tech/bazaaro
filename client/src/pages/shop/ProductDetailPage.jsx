@@ -13,6 +13,7 @@ import {
 import { addToCart } from '../../redux/slices/cartSlice';
 import { selectUser } from '../../redux/slices/authSlice';
 import Loader from '../../components/common/Loader';
+import ProductGallery from '../../components/products/ProductGallery';
 
 function ProductDetailPage() {
   const { id } = useParams();
@@ -32,7 +33,6 @@ function ProductDetailPage() {
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState('');
   const [showReview, setShowReview] = useState(false);
-  const [activeImage, setActiveImage] = useState(null);
 
   const BACKEND_URL = 'http://localhost:5000';
 
@@ -78,13 +78,11 @@ function ProductDetailPage() {
     const firstSize = sizes.find(s => s.stock > 0) || sizes[0];
     setSelection({ pid: product._id, color, size: firstSize?.size || '' });
     setQuantity(1);
-    setActiveImage(null);
   };
 
   const handleSizeChange = (size) => {
     setSelection({ pid: product._id, color: selectedColor, size });
     setQuantity(1);
-    setActiveImage(null);
   };
 
   // ── Get valid image URL ──────────────────
@@ -130,8 +128,8 @@ function ProductDetailPage() {
   const variantImages = selectedVariant?.images?.length
     ? selectedVariant.images
     : selectedVariant?.image ? [selectedVariant.image] : [];
-  const mainImage =
-    activeImage || currentSize?.image || variantImages[0] || product.images?.[0];
+  // Gallery ki tarteeb: selected size ki image, phir color ki images, phir product ki
+  const galleryImages = [currentSize?.image, ...variantImages, ...(product.images || [])].filter(Boolean);
 
   // ── Handlers ───────────────────────────────
   const handleAddToCart = () => {
@@ -217,47 +215,13 @@ function ProductDetailPage() {
         {/* Main */}
         <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:gap-12">
 
-          {/* LEFT: gallery */}
-          <div className="min-w-0">
-            <div className="flex aspect-square items-center justify-center overflow-hidden rounded-xl border border-line bg-surface">
-              <img
-                src={getValidImageUrl(mainImage)}
-                alt={product.name}
-                className="h-full w-full object-contain"
-                onError={(e) => { e.target.onerror = null; e.target.src = '/placeholder.png'; }}
-              />
-            </div>
-
-            {(product.images?.length > 0 || variantImages.length > 0) && (
-              <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
-                {product.images && product.images.map((img, idx) => (
-                  <button
-                    key={`base-${idx}`}
-                    onClick={() => setActiveImage(img)}
-                    aria-label={`Image ${idx + 1}`}
-                    className={`h-16 w-16 shrink-0 overflow-hidden rounded-lg border-2 transition ${
-                      mainImage === img ? 'border-brand-700' : 'border-line hover:border-brand-400'
-                    }`}
-                  >
-                    <img src={getValidImageUrl(img)} alt="" className="h-full w-full object-cover" />
-                  </button>
-                ))}
-
-                {variantImages.map((img, idx) => (
-                  <button
-                    key={`variant-${idx}`}
-                    onClick={() => setActiveImage(img)}
-                    aria-label={`${selectedColor} image ${idx + 1}`}
-                    className={`h-16 w-16 shrink-0 overflow-hidden rounded-lg border-2 transition ${
-                      mainImage === img ? 'border-brand-700' : 'border-line hover:border-brand-400'
-                    }`}
-                  >
-                    <img src={getValidImageUrl(img)} alt="" className="h-full w-full object-cover" />
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
+          {/* LEFT: gallery (color ya size badalte hi key badalti hai, to image bhi badal jati hai) */}
+          <ProductGallery
+            key={`${product._id}|${selectedColor}|${selectedSize}`}
+            images={galleryImages}
+            name={product.name}
+            toUrl={getValidImageUrl}
+          />
 
           {/* RIGHT: info */}
           <div className="min-w-0">
