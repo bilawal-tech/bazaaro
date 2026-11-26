@@ -1,0 +1,8 @@
+node_modules
+npm-debug.log
+# Keys image ke andar nahi jaati: compose unhe runtime par server/.env se deta hai
+.env
+.env.*
+!.env.example
+# Upload ki hui images image mein nahi, compose volume se aati hain
+uploads
