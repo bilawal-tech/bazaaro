@@ -11,6 +11,7 @@
 # Streaming (Kafka) alag se on hota hai, normal `up` mein nahi chalta:
 #   docker compose --profile streaming up -d
 # Kafka (laptop se): localhost:29092   Kafka UI: http://localhost:8080
+# Fake traffic: docker compose --profile streaming --profile simulator up -d  (docs/SIMULATOR.md)
 # Backend events bhejne ke liye server/.env mein EVENTS_ENABLED=true karo. Details: docs/EVENTS.md
 #
 # server/.env mein tumhari keys (JWT_SECRET, Stripe, SMTP, Google) hi use hoti hain.
@@ -111,6 +112,14 @@ services:
     environment:
       KAFKA_CLUSTERS_0_NAME: bazaaro
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
+
+  # Traffic simulator (profile: simulator). Default live mode; backfill ke liye docs/SIMULATOR.md
+  simulator:
+    profiles: [simulator]
+    build: ./simulator
+    depends_on:
+      kafka:
+        condition: service_healthy
 
 volumes:
   mongo-data:

@@ -95,3 +95,11 @@ Do not run this and the full stack at the same time, they use the same ports.
 - `client/Dockerfile`: builds the Vite app, then serves the static files with nginx (`client/nginx.conf`).
 - `docker-compose.yml`: three services (`mongo`, `server`, `client`) with health checks. The server waits for MongoDB.
 - Kafka, Postgres and Airflow are added in the next steps of the data engineering work.
+
+## C: drive full hai? Docker ka data D: par le jao
+
+Docker Desktop (WSL2) saara data (Mongo, Kafka, images) ek bari disk file mein C: par rakhta hai.
+Docker Desktop -> Settings -> Resources -> Advanced -> **Disk image location** -> `D:\DockerData` -> Apply & restart.
+Ye option na dikhe to Docker Desktop update karo (naye versions mein hai).
+Move ke baad C: ki purani file khud hat jati hai. Bade data (Kafka, simulator) ke liye ye zaroori hai.
+Check: `docker system df`.
