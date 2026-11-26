@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 const Product = require('../models/Product');
 const Cart = require('../models/Cart');
 const { resolveLine } = require('../utils/variants');
+const { emit, TOPICS, lineData } = require('../utils/events');
 
 const normalize = (v) => (v === undefined || v === '' ? null : v);
 
@@ -69,6 +70,7 @@ async function addToCart(req, res) {
         }
 
         await cart.save();
+        emit(TOPICS.cart, 'cart.item_added', { ...lineData(line), unit_price: line.unitPrice, cart_quantity: newQuantity }, { key: req.user._id, userId: req.user._id });
         return res.status(existing ? 200 : 201).json({
             success: true,
             message: 'Item added to cart',
@@ -185,6 +187,7 @@ async function clearCart(req, res) {
 
         cart.items = [];
         await cart.save();
+        emit(TOPICS.cart, 'cart.cleared', {}, { key: req.user._id, userId: req.user._id });
         return res.status(200).json({ success: true, message: 'Cart cleared successfully', cart });
     } catch (error) {
         return res.status(500).json({ success: false, message: 'Server error', error: error.message });
@@ -208,6 +211,7 @@ async function removeFromCart(req, res) {
         }
 
         await cart.save();
+        emit(TOPICS.cart, 'cart.item_removed', { item_id: itemId }, { key: req.user._id, userId: req.user._id });
         return res.status(200).json({ success: true, message: 'Item removed from cart successfully', cart });
     } catch (error) {
         return res.status(500).json({ success: false, message: 'Server error', error: error.message });

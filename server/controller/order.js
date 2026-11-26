@@ -9,6 +9,7 @@ const {
 } = require('../utils/variants');
 const { parsePagination } = require('../utils/query');
 const { settlePaymentOnCancel } = require('./payment');
+const { emit, TOPICS, orderData } = require('../utils/events');
 
 const STATUSES = ['processing', 'shipped', 'delivered', 'cancelled'];
 
@@ -143,13 +144,15 @@ async function createOrder(req, res) {
       order.calculateTotals();
       await order.save();
     } catch (err) {
-      await releaseStock(lines);
+      await releaseStock(lines, 'rollback');
       throw err;
     }
 
     // 7. Cart clear karo
     cart.items = [];
     await cart.save();
+
+    emit(TOPICS.orders, 'order.created', orderData(order), { key: order._id, userId: order.user });
 
     return res.status(201).json({
       success: true,
@@ -318,8 +321,10 @@ async function updateOrderStatus(req, res) {
       await settlePaymentOnCancel(order);
     }
 
+    const previous = order.orderStatus;
     order.UpdateOrderStatus(status);
     await order.save();
+    emit(TOPICS.orders, 'order.status_changed', { ...orderData(order), previous_status: previous, changed_by: 'admin' }, { key: order._id, userId: order.user });
 
     return res.status(200).json({
       success: true,
@@ -365,6 +370,7 @@ async function cancelOrder(req, res) {
 
     order.UpdateOrderStatus('cancelled');
     await order.save();
+    emit(TOPICS.orders, 'order.status_changed', { ...orderData(order), previous_status: 'processing', changed_by: 'customer' }, { key: order._id, userId: order.user });
 
     return res.status(200).json({
       success: true,

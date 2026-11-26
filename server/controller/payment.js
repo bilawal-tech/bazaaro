@@ -1,5 +1,6 @@
 const Order = require('../models/Order');
 const { releaseStock, linesFromOrderItems } = require('../utils/variants');
+const { emit, TOPICS, orderData } = require('../utils/events');
 const { isStripeConfigured, getStripe, toStripeAmount } = require('../utils/stripe');
 
 const UNPAID_MINUTES = Number(process.env.UNPAID_ORDER_MINUTES) || 30;
@@ -86,20 +87,24 @@ async function handleWebhook(req, res) {
           await getStripe().refunds.create({ payment_intent: intent.id });
           order.PaymentStatus = 'Refunded';
           await order.save();
+          emit(TOPICS.payments, 'payment.refunded', { order_id: String(order._id), amount: order.totalPrice, reason: 'order_already_cancelled' }, { key: order._id, userId: order.user });
         } else if (order.PaymentStatus !== 'Completed') {
           order.PaymentStatus = 'Completed';
           order.paidAt = new Date();
           await order.save();
+          emit(TOPICS.payments, 'payment.succeeded', { order_id: String(order._id), amount: order.totalPrice, method: 'card' }, { key: order._id, userId: order.user });
         }
       }
     }
 
     if (event.type === 'payment_intent.payment_failed') {
       // Sirf Pending/Failed orders: customer wahi intent par dobara try kar sakta hai
-      await Order.updateOne(
+      const failed = await Order.findOneAndUpdate(
         { paymentIntentId: intent.id, PaymentStatus: { $in: ['Pending', 'Failed'] } },
-        { PaymentStatus: 'Failed', paymentFailedAt: new Date() }
+        { PaymentStatus: 'Failed', paymentFailedAt: new Date() },
+        { new: true }
       );
+      if (failed) emit(TOPICS.payments, 'payment.failed', { order_id: String(failed._id), amount: failed.totalPrice, method: 'card' }, { key: failed._id, userId: failed.user });
     }
 
     return res.status(200).json({ received: true });
@@ -152,6 +157,7 @@ async function cancelUnpaidCardOrders() {
     await releaseStock(linesFromOrderItems(order.orderItems));
     await settlePaymentOnCancel(order);
     if (order.isModified()) await order.save();
+    emit(TOPICS.orders, 'order.status_changed', { ...orderData(order), previous_status: 'processing', changed_by: 'system_unpaid_timeout' }, { key: order._id, userId: order.user });
   }
 }
 

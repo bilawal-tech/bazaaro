@@ -10,6 +10,7 @@ import Navbar from "./components/common/Navbar";
 import Footer from "./components/common/Footer";
 import Toast from "./components/common/Toast";
 import ScrollToTop from "./components/common/ScrollToTop";
+import PageViewTracker from "./components/common/PageViewTracker";
 import ProtectedRoute from "./components/common/ProtectedRoute";
 
 //pages
@@ -59,6 +60,7 @@ function App() {
       <BrowserRouter>
         {/* layout: navbar, toasts */}
         <ScrollToTop />
+        <PageViewTracker />
         <Toast />
         <Navbar />
         {/* layout: navbar, toasts */}

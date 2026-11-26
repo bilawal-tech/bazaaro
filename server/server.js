@@ -125,6 +125,9 @@ app.use('/api/orders', OrderRoutes);
 const PaymentRoutes = require('./routes/paymentRoutes');
 app.use('/api/payments', PaymentRoutes);
 
+// Clickstream events (Kafka). EVENTS_ENABLED=false ho to chupchap ignore
+app.use('/api/events', require('./routes/eventsRoutes'));
+
 app.get('/', (req, res) => {
   res.send('Hello World!')
 })
@@ -157,7 +160,14 @@ app.use((err, req, res, next) => {
 });
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
   startUnpaidOrderSweeper();
+});
+
+// Band hone se pehle Kafka producer flush
+const { shutdown: shutdownEvents } = require('./utils/events');
+process.on('SIGTERM', async () => {
+  await shutdownEvents();
+  server.close(() => process.exit(0));
 });

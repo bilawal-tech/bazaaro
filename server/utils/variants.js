@@ -1,4 +1,5 @@
 const Product = require('../models/Product');
+const { emit, TOPICS, lineData } = require('./events');
 
 // ── Basic helpers ─────────────────────────────
 const hasVariants = (product) =>
@@ -110,17 +111,23 @@ async function reserveStock(lines) {
   for (const line of lines) {
     const ok = await reserveOne(line);
     if (!ok) {
-      await releaseStock(done);
+      await releaseStock(done, 'rollback');
       return { ok: false, failed: line };
     }
     done.push(line);
   }
+  // Sab reserve ho gaye: ab events (rollback par koi event nahi)
+  done.forEach((l) => emit(TOPICS.inventory, 'stock.changed', { ...lineData(l), delta: -l.quantity, reason: 'order_reserved' }, { key: l.productId }));
   return { ok: true };
 }
 
-async function releaseStock(lines) {
+// reason: 'order_cancelled' (default) ya 'rollback' (order save fail hua, event nahi bhejna)
+async function releaseStock(lines, reason = 'order_cancelled') {
   for (const line of lines) {
     await releaseOne(line);
+    if (reason !== 'rollback') {
+      emit(TOPICS.inventory, 'stock.changed', { ...lineData(line), delta: line.quantity, reason }, { key: line.productId });
+    }
   }
 }
 
