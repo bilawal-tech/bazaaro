@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { useDispatch, useSelector } from 'react-redux';
 import toast from 'react-hot-toast';
+import Spinner from '../../components/common/Spinner';
 import {
   getProfile,
   updateProfile,
@@ -64,11 +65,8 @@ function ProfilePage() {
     }
 
     const res = await dispatch(updateProfile(payload));
-    if (res.error) {
-      toast.error(res.payload || 'Could not update profile');
-    } else {
-      toast.success('Profile updated');
-    }
+    // Error ka toast Toast.jsx dikha deta hai
+    if (!res.error) toast.success('Profile updated');
   };
 
   if (!profile) return null;
@@ -175,7 +173,7 @@ function ProfilePage() {
           )}
 
           <button type="submit" disabled={isSubmitting} className="btn-primary btn-lg w-full">
-            {isSubmitting ? 'Saving…' : 'Save changes'}
+            {isSubmitting ? <><Spinner size={18} /> Saving…</> : 'Save changes'}
           </button>
         </form>
       </div>

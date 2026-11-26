@@ -13,6 +13,16 @@ export default {
   ],
   theme: {
     extend: {
+      // Cart badge: item add hone par halka sa uchhalta hai
+      keyframes: {
+        bump: {
+          '0%, 100%': { transform: 'scale(1)' },
+          '40%':      { transform: 'scale(1.4)' },
+        },
+      },
+      animation: {
+        bump: 'bump 0.35s ease-out',
+      },
       colors: {
         brand: {
           50:  '#F2FAF5',

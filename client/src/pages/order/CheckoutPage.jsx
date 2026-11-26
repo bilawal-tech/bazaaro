@@ -17,6 +17,7 @@ import {
 } from '../../redux/slices/orderSlice';
 import { selectUser } from '../../redux/slices/authSlice';
 import CheckoutSteps from '../../components/common/CheckoutSteps';
+import Spinner from '../../components/common/Spinner';
 
 // COD aur card (Stripe) chalte hain. Stripe Pakistan ke local methods
 // (JazzCash, Easypaisa, bank transfer) support nahi karta, is liye woh abhi band hain.
@@ -207,11 +208,12 @@ function CheckoutPage() {
 
                 <ul className="mb-4 max-h-56 space-y-3 overflow-y-auto pr-1">
                   {items.map((item) => (
-                    <li key={item._id} className="flex justify-between gap-4 text-sm">
+                    <li key={item._id} className="flex justify-between gap-2 text-sm">
+                      {/* Naam lamba ho to naam kate, "× quantity" hamesha dikhe */}
                       <span className="min-w-0 flex-1 truncate text-ink-soft">
                         {item.name || item.productId?.name}
-                        <span className="font-medium text-ink"> × {item.quantity}</span>
                       </span>
+                      <span className="shrink-0 font-medium text-ink">× {item.quantity}</span>
                       <span className="shrink-0 font-medium text-ink">
                         Rs. {((item.currentProductPrice || item.productId?.price || 0) * item.quantity).toLocaleString()}
                       </span>
@@ -236,7 +238,7 @@ function CheckoutPage() {
                 </div>
 
                 <button type="submit" disabled={loading} className="btn-primary btn-lg mt-5 w-full">
-                  {loading ? 'Placing order…' : paymentMethod === 'Credit Card' ? 'Continue to payment' : 'Place order'}
+                  {loading ? <><Spinner size={18} /> Placing order…</> : paymentMethod === 'Credit Card' ? 'Continue to payment' : 'Place order'}
                 </button>
               </div>
             </aside>

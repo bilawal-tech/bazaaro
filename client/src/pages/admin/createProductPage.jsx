@@ -332,7 +332,8 @@ function ProductForm({ product }) {
         }, 1200);
       }
     } catch (err) {
-      toast.error(`${typeof err === 'string' ? err : 'Failed to save product'}`);
+      // Server ka error (string) Toast.jsx dikha deta hai; baqi (jaise form ka galat data) yahan
+      if (typeof err !== 'string') toast.error('Failed to save product');
       console.error('Error:', err);
     }
   };

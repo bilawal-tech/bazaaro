@@ -13,6 +13,7 @@ import {
 import { addToCart } from '../../redux/slices/cartSlice';
 import { selectUser } from '../../redux/slices/authSlice';
 import { ProductPageSkeleton } from '../../components/common/Skeleton';
+import Spinner from '../../components/common/Spinner';
 import ProductGallery from '../../components/products/ProductGallery';
 
 function ProductDetailPage() {
@@ -23,6 +24,8 @@ function ProductDetailPage() {
   const productData = useSelector(selectProduct);
   const loading = useSelector(selectLoading);
   const user = useSelector(selectUser);
+  const [adding, setAdding] = useState(false);       // Add to cart chal raha hai
+  const [reviewing, setReviewing] = useState(false);   // review submit ho raha hai
 
   const product = productData?.product ? productData.product : productData;
 
@@ -144,17 +147,16 @@ function ProductDetailPage() {
       return;
     }
 
+    setAdding(true);
     dispatch(addToCart({
       productId: product._id,
       quantity,
       color: selectedColor,
       size: selectedSize,
     })).then((res) => {
-      if (!res.error) {
-        toast.success('Added to cart');
-      } else {
-        toast.error(res.payload || 'Could not add to cart');
-      }
+      setAdding(false);
+      // Error ka toast Toast.jsx dikha deta hai
+      if (!res.error) toast.success('Added to cart');
     });
   };
 
@@ -171,16 +173,17 @@ function ProductDetailPage() {
       return;
     }
 
+    setReviewing(true);
     dispatch(addReview({
       productId: product._id,
       reviewData: { rating, comment },
     })).then((res) => {
+      setReviewing(false);
+      // Error ka toast Toast.jsx dikha deta hai
       if (!res.error) {
         toast.success('Review submitted');
         setComment('');
         setShowReview(false);
-      } else {
-        toast.error('Could not submit review');
       }
     });
   };
@@ -207,7 +210,7 @@ function ProductDetailPage() {
         {/* Back */}
         <button
           onClick={() => navigate(-1)}
-          className="mb-6 inline-flex items-center gap-1.5 text-sm font-medium text-ink-soft hover:text-brand-700"
+          className="mb-4 inline-flex items-center gap-1.5 py-2 text-sm font-medium text-ink-soft hover:text-brand-700"
         >
           <FiArrowLeft size={16} /> Back
         </button>
@@ -335,10 +338,10 @@ function ProductDetailPage() {
 
               <button
                 onClick={handleAddToCart}
-                disabled={currentStock === 0}
+                disabled={currentStock === 0 || adding}
                 className="btn-primary btn-lg w-full"
               >
-                {currentStock === 0 ? 'Out of stock' : 'Add to cart'}
+                {adding ? <><Spinner size={18} /> Adding…</> : currentStock === 0 ? 'Out of stock' : 'Add to cart'}
               </button>
             </div>
           </div>
@@ -390,7 +393,9 @@ function ProductDetailPage() {
                 />
               </div>
 
-              <button type="submit" className="btn-primary">Submit review</button>
+              <button type="submit" disabled={reviewing} className="btn-primary">
+                {reviewing ? <><Spinner /> Submitting…</> : 'Submit review'}
+              </button>
             </form>
           )}
 

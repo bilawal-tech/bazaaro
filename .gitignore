@@ -144,3 +144,6 @@ vite.config.ts.timestamp-*
 
 # User uploaded files (not source code)
 server/uploads/
+
+
+stripe-server.patch

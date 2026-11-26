@@ -184,7 +184,7 @@ function ShopPage() {
                 type="button"
                 onClick={() => setShowFilters(!showFilters)}
                 aria-expanded={showFilters}
-                className="btn-secondary btn-sm md:hidden"
+                className="btn-secondary btn-sm py-2.5 md:hidden"
               >
                 {showFilters ? <FiX size={16} /> : <FiSliders size={16} />}
                 Filters{activeFilterCount > 0 && ` (${activeFilterCount})`}

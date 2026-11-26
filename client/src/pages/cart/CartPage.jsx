@@ -63,7 +63,7 @@ function CartPage() {
     clearTimeout(debounceTimers.current[itemId]);
     delete debounceTimers.current[itemId];
     dispatch(removeCartItem(itemId));
-    toast.error("Item removed from cart"); 
+    toast.success("Item removed from cart");
   };
 
   // clear complete bag
@@ -132,7 +132,7 @@ function CartPage() {
           <button
             type="button"
             onClick={handleClearCart}
-            className="inline-flex items-center gap-1.5 text-sm font-medium text-ink-soft hover:text-red-600"
+            className="inline-flex items-center gap-1.5 py-2 text-sm font-medium text-ink-soft hover:text-red-600"
           >
             <FiTrash2 size={16} /> Clear cart
           </button>
@@ -204,7 +204,7 @@ function CartPage() {
                       <button
                         type="button"
                         onClick={() => handleRemove(item._id)}
-                        className="text-sm font-medium text-ink-soft hover:text-red-600"
+                        className="px-1 py-2 text-sm font-medium text-ink-soft hover:text-red-600"
                       >
                         Remove
                       </button>
@@ -245,7 +245,7 @@ function CartPage() {
               <button type="button" onClick={handleCheckout} className="btn-primary btn-lg mt-5 w-full">
                 Checkout
               </button>
-              <Link to="/shop" className="link mt-4 block text-center text-sm">Continue shopping</Link>
+              <Link to="/shop" className="link mt-2 block py-2 text-center text-sm">Continue shopping</Link>
             </div>
           </aside>
 

@@ -36,7 +36,26 @@ import NotFoundPage from "./pages/NotFoundPage";
 function App() {
   return (
     <>
-    <Toaster position="top-right" reverseOrder={false} />
+    <Toaster
+      position="top-right"
+      containerStyle={{ top: 76 }}
+      toastOptions={{
+        duration: 3000,
+        style: {
+          background: '#fff',
+          color: '#14221B',
+          border: '1px solid #E3E9E5',
+          borderRadius: '12px',
+          boxShadow: '0 8px 24px rgba(20, 34, 27, 0.12)',
+          fontSize: '14px',
+          fontWeight: 500,
+          padding: '12px 14px',
+          maxWidth: '360px',
+        },
+        success: { iconTheme: { primary: '#2D6A4F', secondary: '#fff' } },
+        error:   { iconTheme: { primary: '#DC2626', secondary: '#fff' }, duration: 4000 },
+      }}
+    />
       <BrowserRouter>
         {/* layout: navbar, toasts */}
         <ScrollToTop />

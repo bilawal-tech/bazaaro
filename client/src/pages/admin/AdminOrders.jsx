@@ -25,8 +25,8 @@ function AdminOrders() {
 
   const handleStatusChange = async (orderId, newStatus) => {
     const result = await dispatch(updateOrderStatus({ id: orderId, status: newStatus }));
-    if (updateOrderStatus.rejected.match(result)) toast.error('Could not update status');
-    else toast.success('Status updated');
+    // Error ka toast Toast.jsx dikha deta hai (server ki asli wajah ke saath)
+    if (!updateOrderStatus.rejected.match(result)) toast.success('Status updated');
   };
 
   if (loading) return <Loader />;

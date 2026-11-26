@@ -135,7 +135,7 @@ function HomePage() {
             <h2 className="section-title">Featured products</h2>
             <p className="mt-1 text-sm text-ink-soft">Latest additions to the store</p>
           </div>
-          <Link to="/shop" className="link flex shrink-0 items-center gap-1 text-sm">
+          <Link to="/shop" className="link flex shrink-0 items-center gap-1 py-2 text-sm">
             View all <FiArrowRight size={16} />
           </Link>
         </div>
@@ -161,7 +161,7 @@ function HomePage() {
               <h2 className="section-title">On sale</h2>
               <p className="mt-1 text-sm text-ink-soft">Products with a lower price right now</p>
             </div>
-            <Link to="/shop" className="link flex shrink-0 items-center gap-1 text-sm">
+            <Link to="/shop" className="link flex shrink-0 items-center gap-1 py-2 text-sm">
               View all <FiArrowRight size={16} />
             </Link>
           </div>

@@ -6,6 +6,7 @@ import { Elements, PaymentElement, useElements, useStripe } from '@stripe/react-
 import API from '../../services/api';
 import Loader from '../../components/common/Loader';
 import CheckoutSteps from '../../components/common/CheckoutSteps';
+import Spinner from '../../components/common/Spinner';
 import { getImageUrl } from '../../utils/imageUrl';
 
 const money = (n) => `Rs. ${Number(n || 0).toLocaleString()}`;
@@ -61,7 +62,7 @@ function CardForm({ order }) {
       <PaymentElement />
       {message && <p className="field-error mt-3">{message}</p>}
       <button type="submit" disabled={!stripe || submitting} className="btn-primary btn-lg mt-5 w-full">
-        {submitting ? 'Processing…' : `Pay Rs. ${order.totalPrice.toLocaleString()}`}
+        {submitting ? <><Spinner size={18} /> Processing…</> : `Pay Rs. ${order.totalPrice.toLocaleString()}`}
       </button>
       <p className="mt-3 text-center text-xs text-ink-soft">
         Test mode: use card 4242 4242 4242 4242, any future date, any CVC.

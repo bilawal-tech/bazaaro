@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { useDispatch, useSelector } from 'react-redux';
 import { Link, useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import AuthShell from '../../components/common/AuthShell';
 import GoogleButton from '../../components/common/GoogleButton';
 import {
@@ -38,6 +39,7 @@ function RegisterPage() {
   useEffect(() => {
     if (success) {
       dispatch(clearSuccess());
+      toast.success('Account created. Please sign in.');
       navigate('/login');
     }
   }, [success, navigate, dispatch]);

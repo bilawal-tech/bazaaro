@@ -77,11 +77,8 @@ function OrderDetailPage() {
   const confirmCancel = async () => {
     setShowCancel(false);
     const res = await dispatch(cancelOrder(current._id));
-    if (res.error) {
-      toast.error(res.payload || 'Could not cancel order');
-    } else {
-      toast.success('Order cancelled');
-    }
+    // Error ka toast Toast.jsx dikha deta hai
+    if (!res.error) toast.success('Order cancelled');
   };
 
   return (
@@ -90,7 +87,7 @@ function OrderDetailPage() {
 
         {justPaid && status !== 'cancelled' && <CheckoutSteps current={3} />}
 
-        <Link to="/orders" className="inline-flex items-center gap-1.5 text-sm font-medium text-ink-soft hover:text-brand-700">
+        <Link to="/orders" className="inline-flex items-center gap-1.5 py-2 text-sm font-medium text-ink-soft hover:text-brand-700">
           <FiArrowLeft size={16} /> Back to orders
         </Link>
 

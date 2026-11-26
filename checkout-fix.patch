@@ -1,0 +1,32 @@
+--- a/client/src/pages/order/CheckoutPage.jsx
++++ b/client/src/pages/order/CheckoutPage.jsx
+@@ -1,4 +1,4 @@
+-import { useEffect, useState } from 'react';
++import { useEffect, useRef, useState } from 'react';
+ import { useForm, useWatch } from 'react-hook-form';
+ import { useDispatch, useSelector } from 'react-redux';
+ import { useNavigate } from 'react-router-dom';
+@@ -55,6 +55,8 @@
+   // Page refresh par cart state khali hoti hai. Pehle server se cart lo,
+   // phir hi faisla karo ke cart khali hai ya nahi.
+   const [cartLoaded, setCartLoaded] = useState(false);
++  // Order ban jane ke baad redirect chal raha ho to khali-cart guard beech mein na aaye
++  const redirecting = useRef(false);
+   useEffect(() => {
+     let active = true;
+     dispatch(getCart()).finally(() => { if (active) setCartLoaded(true); });
+@@ -65,12 +67,14 @@
+   // Order place hone ke baad cart khali hoti hai; us waqt /cart par na bhejo,
+   // success wala effect /orders par le jayega.
+   useEffect(() => {
++    if (redirecting.current) return;
+     if (cartLoaded && !success && (!items || items.length === 0)) navigate('/cart');
+   }, [cartLoaded, items, success, navigate]);
+ 
+   // ── Order success → Toast show karo aur orders page pr le jao ──
+   useEffect(() => {
+     if (success) {
++      redirecting.current = true;
+       dispatch(clearSuccess());
+       if (placedOrder?.PaymentMethod === 'Credit Card') {
+         // Card order: pehle paisa, phir order confirm

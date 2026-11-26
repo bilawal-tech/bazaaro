@@ -1,12 +1,22 @@
+import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useDispatch } from 'react-redux';
-import { FiStar } from 'react-icons/fi';
+import { useDispatch, useSelector } from 'react-redux';
+import { FiStar, FiCheck } from 'react-icons/fi';
+import toast from 'react-hot-toast';
 import { addToCart } from '../../redux/slices/cartSlice';
+import { selectUser } from '../../redux/slices/authSlice';
+import Spinner from '../common/Spinner';
 import { getImageUrl } from '../../utils/imageUrl';
 
 function ProductCard({ product }) {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const user = useSelector(selectUser);
+
+  // idle -> adding (spinner) -> added (tick, 1.5 second) -> idle
+  const [status, setStatus] = useState('idle');
+  const timerRef = useRef(null);
+  useEffect(() => () => clearTimeout(timerRef.current), []);
 
   // Variants wale product mein color/size chuni jati hai, is liye detail page par bhejo
   const variantList = product.variants || [];
@@ -14,12 +24,27 @@ function ProductCard({ product }) {
   const sizeCount = variantList.reduce((n, v) => n + (v.sizes?.length || 0), 0);
   const showFrom = sizeCount > 1;
 
-  const handleAddToCart = () => {
+  const handleAddToCart = async () => {
     if (hasVariants) {
       navigate(`/product/${product._id}`);
       return;
     }
-    dispatch(addToCart({ productId: product._id, quantity: 1 }));
+    if (!user) {
+      toast.error('Please sign in first');
+      navigate('/login');
+      return;
+    }
+    if (status === 'adding') return;
+
+    setStatus('adding');
+    const res = await dispatch(addToCart({ productId: product._id, quantity: 1 }));
+    if (res.error) {
+      setStatus('idle'); // error ka toast Toast.jsx dikha deta hai
+      return;
+    }
+    toast.success('Added to cart');
+    setStatus('added');
+    timerRef.current = setTimeout(() => setStatus('idle'), 1500);
   };
 
   // Discount
@@ -98,10 +123,14 @@ function ProductCard({ product }) {
           <button
             type="button"
             onClick={handleAddToCart}
-            disabled={outOfStock}
+            disabled={outOfStock || status === 'adding'}
             className="btn-primary w-full py-2"
           >
-            {outOfStock ? 'Unavailable' : hasVariants ? 'Select options' : 'Add to cart'}
+            {status === 'adding' ? (
+              <><Spinner /> Adding…</>
+            ) : status === 'added' ? (
+              <><FiCheck size={16} aria-hidden="true" /> Added</>
+            ) : outOfStock ? 'Unavailable' : hasVariants ? 'Select options' : 'Add to cart'}
           </button>
         </div>
       </div>

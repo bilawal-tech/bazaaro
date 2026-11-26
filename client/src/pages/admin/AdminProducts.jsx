@@ -38,8 +38,8 @@ function AdminProducts() {
     const product = toDelete;
     setToDelete(null);
     const result = await dispatch(deleteProduct(product._id));
-    if (deleteProduct.rejected.match(result)) toast.error('Could not delete product');
-    else toast.success('Product deleted');
+    // Error ka toast Toast.jsx dikha deta hai
+    if (!deleteProduct.rejected.match(result)) toast.success('Product deleted');
   };
 
   if (loading) return <Loader />;

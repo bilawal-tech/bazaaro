@@ -63,7 +63,7 @@ function Footer() {
             <ul className="space-y-2.5">
               {shopLinks.map((link) => (
                 <li key={link.label}>
-                  <Link to={link.path} className="text-sm text-brand-200 transition hover:text-white">
+                  <Link to={link.path} className="inline-block py-1 text-sm text-brand-200 transition hover:text-white">
                     {link.label}
                   </Link>
                 </li>

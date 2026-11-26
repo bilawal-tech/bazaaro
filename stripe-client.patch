@@ -1,0 +1,400 @@
+diff --git a/client/.env.example b/client/.env.example
+index 9001396..cf708fc 100644
+--- a/client/.env.example
++++ b/client/.env.example
+@@ -12,3 +12,7 @@ VITE_X_URL=
+ 
+ # Backend ka URL (deploy ke waqt badlein)
+ VITE_BACKEND_URL=http://localhost:5000
++
++# Stripe publishable key (test): Dashboard -> Developers -> API keys -> pk_test_...
++# Secret key yahan kabhi nahi; woh sirf server/.env mein.
++VITE_STRIPE_PUBLISHABLE_KEY=
+diff --git a/client/package-lock.json b/client/package-lock.json
+index 48d6608..56dcfb8 100644
+--- a/client/package-lock.json
++++ b/client/package-lock.json
+@@ -9,6 +9,8 @@
+       "version": "0.0.0",
+       "dependencies": {
+         "@reduxjs/toolkit": "^2.12.0",
++        "@stripe/react-stripe-js": "^7.1.0",
++        "@stripe/stripe-js": "^10.3.0",
+         "axios": "^1.17.0",
+         "react": "^19.2.6",
+         "react-dom": "^19.2.6",
+@@ -933,6 +935,29 @@
+       "integrity": "sha512-e7Mew686owMaPJVNNLs55PUvgz371nKgwsc4vxE49zsODpJEnxgxRo2y/OKrqueavXgZNMDVj3DdHFlaSAeU8g==",
+       "license": "MIT"
+     },
++    "node_modules/@stripe/react-stripe-js": {
++      "version": "7.1.0",
++      "resolved": "https://registry.npmjs.org/@stripe/react-stripe-js/-/react-stripe-js-7.1.0.tgz",
++      "integrity": "sha512-ehXa04HVJ8j/tPy1hQW9gdgLGY4o1msb7C5Rasd0LpLMiqY9VJIyuLAI6eUUXkeFvgbv6+5kulyNgHoR4FrRfg==",
++      "license": "MIT",
++      "dependencies": {
++        "prop-types": "^15.7.2"
++      },
++      "peerDependencies": {
++        "@stripe/stripe-js": ">=10.3.0 <11.0.0",
++        "react": ">=16.8.0 <20.0.0",
++        "react-dom": ">=16.8.0 <20.0.0"
++      }
++    },
++    "node_modules/@stripe/stripe-js": {
++      "version": "10.3.0",
++      "resolved": "https://registry.npmjs.org/@stripe/stripe-js/-/stripe-js-10.3.0.tgz",
++      "integrity": "sha512-/C+qwO7bkDIYbIHypxppg8qGnWXdqQEOM855lJ8wTkd2VPoRAYLTGDOFTpJ8B7kso3o9cjMy2r1KPw8WQregNA==",
++      "license": "MIT",
++      "engines": {
++        "node": ">=12.16"
++      }
++    },
+     "node_modules/@tybys/wasm-util": {
+       "version": "0.10.2",
+       "resolved": "https://registry.npmjs.org/@tybys/wasm-util/-/wasm-util-0.10.2.tgz",
+@@ -2240,7 +2265,6 @@
+       "version": "4.0.0",
+       "resolved": "https://registry.npmjs.org/js-tokens/-/js-tokens-4.0.0.tgz",
+       "integrity": "sha512-RdJUflcE3cUzKiMqQgsCu06FPu9UdIJO0beYbPhHN4k6apgJtifcoCtT9bcxOpYBtpD2kCM6Sbzg4CausW/PKQ==",
+-      "dev": true,
+       "license": "MIT"
+     },
+     "node_modules/jsesc": {
+@@ -2608,6 +2632,18 @@
+         "url": "https://github.com/sponsors/sindresorhus"
+       }
+     },
++    "node_modules/loose-envify": {
++      "version": "1.4.0",
++      "resolved": "https://registry.npmjs.org/loose-envify/-/loose-envify-1.4.0.tgz",
++      "integrity": "sha512-lyuxPGr/Wfhrlem2CL/UcnUc1zcqKAImBDzukY7Y5F/yQiNdko6+fRLevlw1HgMySw7f611UIY408EtxRSoK3Q==",
++      "license": "MIT",
++      "dependencies": {
++        "js-tokens": "^3.0.0 || ^4.0.0"
++      },
++      "bin": {
++        "loose-envify": "cli.js"
++      }
++    },
+     "node_modules/lru-cache": {
+       "version": "5.1.1",
+       "resolved": "https://registry.npmjs.org/lru-cache/-/lru-cache-5.1.1.tgz",
+@@ -2769,7 +2805,6 @@
+       "version": "4.1.1",
+       "resolved": "https://registry.npmjs.org/object-assign/-/object-assign-4.1.1.tgz",
+       "integrity": "sha512-rJgTQnkUnH1sFw8yT6VSU3zD3sWmu6sZhIseY8VX+GRu3P6F7Fu+JNDoXfklElbLJSnc3FUQHVe4cU5hj+BcUg==",
+-      "dev": true,
+       "license": "MIT",
+       "engines": {
+         "node": ">=0.10.0"
+@@ -3081,6 +3116,17 @@
+         "node": ">= 0.8.0"
+       }
+     },
++    "node_modules/prop-types": {
++      "version": "15.8.1",
++      "resolved": "https://registry.npmjs.org/prop-types/-/prop-types-15.8.1.tgz",
++      "integrity": "sha512-oj87CgZICdulUohogVAR7AjlC0327U4el4L6eAvOqCeudMDVU0NThNaV+b9Df4dXgSP1gXMTnPdhfe/2qDH5cg==",
++      "license": "MIT",
++      "dependencies": {
++        "loose-envify": "^1.4.0",
++        "object-assign": "^4.1.1",
++        "react-is": "^16.13.1"
++      }
++    },
+     "node_modules/proxy-from-env": {
+       "version": "2.1.0",
+       "resolved": "https://registry.npmjs.org/proxy-from-env/-/proxy-from-env-2.1.0.tgz",
+@@ -3184,6 +3230,12 @@
+         "react": "*"
+       }
+     },
++    "node_modules/react-is": {
++      "version": "16.13.1",
++      "resolved": "https://registry.npmjs.org/react-is/-/react-is-16.13.1.tgz",
++      "integrity": "sha512-24e6ynE2H+OKt4kqsOvNd8kBpV65zoxbA4BVsEOB3ARVWQki/DHzaUoC5KuON/BiccDaCCTZBuOcfZs70kR8bQ==",
++      "license": "MIT"
++    },
+     "node_modules/react-redux": {
+       "version": "9.3.0",
+       "resolved": "https://registry.npmjs.org/react-redux/-/react-redux-9.3.0.tgz",
+diff --git a/client/package.json b/client/package.json
+index d050ea8..fa9f83b 100644
+--- a/client/package.json
++++ b/client/package.json
+@@ -11,6 +11,8 @@
+   },
+   "dependencies": {
+     "@reduxjs/toolkit": "^2.12.0",
++    "@stripe/react-stripe-js": "^7.1.0",
++    "@stripe/stripe-js": "^10.3.0",
+     "axios": "^1.17.0",
+     "react": "^19.2.6",
+     "react-dom": "^19.2.6",
+diff --git a/client/src/App.jsx b/client/src/App.jsx
+index 7a12510..960cdff 100644
+--- a/client/src/App.jsx
++++ b/client/src/App.jsx
+@@ -18,6 +18,7 @@ import ShopPage from "./pages/shop/ShopPage";
+ import ProductDetailPage from "./pages/shop/ProductDetailPage";
+ import CartPage from "./pages/cart/CartPage";
+ import CheckoutPage from "./pages/order/CheckoutPage";
++import PaymentPage from "./pages/order/PaymentPage";
+ import OrderHistoryPage from "./pages/order/OrderHistoryPage";
+ import OrderDetailPage from "./pages/order/OrderDetailPage";
+ import ProfilePage from "./pages/auth/ProfilePage";
+@@ -55,6 +56,7 @@ function App() {
+             <Route element={<ProtectedRoute />}>
+                <Route path="/cart" element={<CartPage />} /> 
+               <Route path="/checkout" element={<CheckoutPage />} /> 
++              <Route path="/pay/:orderId" element={<PaymentPage />} />
+               <Route path="/orders" element={<OrderHistoryPage />} /> 
+               <Route path="/orders/:id" element={<OrderDetailPage />} />
+               <Route path="/profile" element={<ProfilePage />} />
+diff --git a/client/src/pages/order/CheckoutPage.jsx b/client/src/pages/order/CheckoutPage.jsx
+index 2e23117..5c71977 100644
+--- a/client/src/pages/order/CheckoutPage.jsx
++++ b/client/src/pages/order/CheckoutPage.jsx
+@@ -1,5 +1,5 @@
+ import { useEffect, useState } from 'react';
+-import { useForm } from 'react-hook-form';
++import { useForm, useWatch } from 'react-hook-form';
+ import { useDispatch, useSelector } from 'react-redux';
+ import { useNavigate } from 'react-router-dom';
+ import toast from 'react-hot-toast';
+@@ -12,15 +12,16 @@ import {
+   createOrder,
+   selectOrderLoading,
+   selectOrderSuccess,
++  selectOrder,
+   clearSuccess,
+ } from '../../redux/slices/orderSlice';
+ import { selectUser } from '../../redux/slices/authSlice';
+ 
+-// Abhi sirf COD chalta hai (server par koi payment gateway nahi).
+-// Stripe lagne par baqi methods ke liye enabled: true kar dena.
++// COD aur card (Stripe) chalte hain. Stripe Pakistan ke local methods
++// (JazzCash, Easypaisa, bank transfer) support nahi karta, is liye woh abhi band hain.
+ const PAYMENT_METHODS = [
+   { value: 'COD',           label: 'Cash on delivery',    hint: 'Pay when your order arrives', enabled: true  },
+-  { value: 'Credit Card',   label: 'Credit or debit card', hint: 'Coming soon',                 enabled: false },
++  { value: 'Credit Card',   label: 'Credit or debit card', hint: 'Pay securely online',         enabled: true  },
+   { value: 'Jazzcash',      label: 'JazzCash',            hint: 'Coming soon',                 enabled: false },
+   { value: 'Easypaisa',     label: 'Easypaisa',           hint: 'Coming soon',                 enabled: false },
+   { value: 'Bank Transfer', label: 'Bank transfer',       hint: 'Coming soon',                 enabled: false },
+@@ -33,11 +34,13 @@ function CheckoutPage() {
+   const totalPrice = useSelector(selectTotalPrice);
+   const loading    = useSelector(selectOrderLoading);
+   const success    = useSelector(selectOrderSuccess);
++  const placedOrder = useSelector(selectOrder);
+   const user       = useSelector(selectUser);
+ 
+   const {
+     register,
+     handleSubmit,
++    control,
+     formState: { errors },
+   } = useForm({
+     defaultValues: {
+@@ -47,6 +50,8 @@ function CheckoutPage() {
+     }
+   });
+ 
++  const paymentMethod = useWatch({ control, name: 'PaymentMethod', defaultValue: 'COD' });
++
+   // Page refresh par cart state khali hoti hai. Pehle server se cart lo,
+   // phir hi faisla karo ke cart khali hai ya nahi.
+   const [cartLoaded, setCartLoaded] = useState(false);
+@@ -66,11 +71,16 @@ function CheckoutPage() {
+   // ── Order success → Toast show karo aur orders page pr le jao ──
+   useEffect(() => {
+     if (success) {
+-      toast.success('Order placed');
+       dispatch(clearSuccess());
+-      navigate('/orders');
++      if (placedOrder?.PaymentMethod === 'Credit Card') {
++        // Card order: pehle paisa, phir order confirm
++        navigate(`/pay/${placedOrder._id}`, { replace: true });
++      } else {
++        toast.success('Order placed');
++        navigate('/orders');
++      }
+     }
+-  }, [success, dispatch, navigate]);
++  }, [success, placedOrder, dispatch, navigate]);
+ 
+   // ── Shipping cost ──────────────────────────
+   const shippingPrice = totalPrice > 1000 ? 0 : 200;
+@@ -219,7 +229,7 @@ function CheckoutPage() {
+                 </div>
+ 
+                 <button type="submit" disabled={loading} className="btn-primary btn-lg mt-5 w-full">
+-                  {loading ? 'Placing order…' : 'Place order'}
++                  {loading ? 'Placing order…' : paymentMethod === 'Credit Card' ? 'Continue to payment' : 'Place order'}
+                 </button>
+               </div>
+             </aside>
+diff --git a/client/src/pages/order/OrderDetailPage.jsx b/client/src/pages/order/OrderDetailPage.jsx
+index bd7ca16..e2ee407 100644
+--- a/client/src/pages/order/OrderDetailPage.jsx
++++ b/client/src/pages/order/OrderDetailPage.jsx
+@@ -183,6 +183,10 @@ function OrderDetailPage() {
+               {current.PaymentMethod} · <span className="font-medium text-ink">{current.PaymentStatus}</span>
+               {current.paidAt ? ` (${formatDateTime(current.paidAt)})` : ''}
+             </p>
++            {isOwner && current.PaymentMethod === 'Credit Card' && status === 'processing' &&
++              ['Pending', 'Failed'].includes(current.PaymentStatus) && (
++              <Link to={`/pay/${current._id}`} className="btn-primary btn-sm mt-3">Pay now</Link>
++            )}
+ 
+             {!isOwner && current.user && (
+               <>
+diff --git a/client/src/pages/order/PaymentPage.jsx b/client/src/pages/order/PaymentPage.jsx
+new file mode 100644
+index 0000000..124cc54
+--- /dev/null
++++ b/client/src/pages/order/PaymentPage.jsx
+@@ -0,0 +1,142 @@
++import { useEffect, useMemo, useState } from 'react';
++import { Link, useNavigate, useParams } from 'react-router-dom';
++import toast from 'react-hot-toast';
++import { loadStripe } from '@stripe/stripe-js';
++import { Elements, PaymentElement, useElements, useStripe } from '@stripe/react-stripe-js';
++import API from '../../services/api';
++import Loader from '../../components/common/Loader';
++
++const publishableKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY;
++// Key na ho to Stripe load hi nahi hota; page saaf paigham dikhata hai.
++const stripePromise = publishableKey ? loadStripe(publishableKey) : null;
++
++const appearance = {
++  theme: 'stripe',
++  variables: { colorPrimary: '#1B4332', borderRadius: '8px', fontFamily: 'Inter, system-ui, sans-serif' },
++};
++
++function CardForm({ order }) {
++  const stripe = useStripe();
++  const elements = useElements();
++  const navigate = useNavigate();
++  const [submitting, setSubmitting] = useState(false);
++  const [message, setMessage] = useState('');
++
++  const handleSubmit = async (e) => {
++    e.preventDefault();
++    if (!stripe || !elements) return;
++
++    setSubmitting(true);
++    setMessage('');
++
++    const { error, paymentIntent } = await stripe.confirmPayment({
++      elements,
++      // Kuch cards (3D Secure) redirect karte hain; wapas order page par aayenge
++      confirmParams: { return_url: `${window.location.origin}/orders/${order._id}?paid=1` },
++      redirect: 'if_required',
++    });
++
++    if (error) {
++      setMessage(error.message || 'Payment failed. Please try another card.');
++      setSubmitting(false);
++      return;
++    }
++
++    if (paymentIntent?.status === 'succeeded' || paymentIntent?.status === 'processing') {
++      toast.success('Payment received');
++      navigate(`/orders/${order._id}?paid=1`, { replace: true });
++      return;
++    }
++
++    setMessage('Payment was not completed. Please try again.');
++    setSubmitting(false);
++  };
++
++  return (
++    <form onSubmit={handleSubmit}>
++      <PaymentElement />
++      {message && <p className="field-error mt-3">{message}</p>}
++      <button type="submit" disabled={!stripe || submitting} className="btn-primary btn-lg mt-5 w-full">
++        {submitting ? 'Processing…' : `Pay Rs. ${order.totalPrice.toLocaleString()}`}
++      </button>
++      <p className="mt-3 text-center text-xs text-ink-soft">
++        Test mode: use card 4242 4242 4242 4242, any future date, any CVC.
++      </p>
++    </form>
++  );
++}
++
++function PaymentPage() {
++  const { orderId } = useParams();
++  const navigate = useNavigate();
++  const [order, setOrder] = useState(null);
++  const [clientSecret, setClientSecret] = useState('');
++  const [error, setError] = useState('');
++
++  useEffect(() => {
++    let active = true;
++
++    (async () => {
++      try {
++        const { data } = await API.get(`/orders/${orderId}`);
++        const found = data.order;
++
++        if (found.PaymentMethod !== 'Credit Card' || found.orderStatus !== 'processing') {
++          navigate(`/orders/${orderId}`, { replace: true });
++          return;
++        }
++        if (found.PaymentStatus === 'Completed') {
++          navigate(`/orders/${orderId}`, { replace: true });
++          return;
++        }
++
++        const intent = await API.post('/payments/create-intent', { orderId });
++        if (!active) return;
++        setOrder(found);
++        setClientSecret(intent.data.clientSecret);
++      } catch (err) {
++        if (active) setError(err.response?.data?.message || 'Could not start payment');
++      }
++    })();
++
++    return () => { active = false; };
++  }, [orderId, navigate]);
++
++  const options = useMemo(() => ({ clientSecret, appearance }), [clientSecret]);
++
++  return (
++    <div className="bg-surface">
++      <div className="container-page max-w-xl py-8 sm:py-12">
++        <h1 className="page-title mb-6">Pay for your order</h1>
++
++        {!publishableKey && (
++          <p className="card p-6 text-sm text-ink-soft">
++            Card payments are not set up yet (VITE_STRIPE_PUBLISHABLE_KEY is missing).
++          </p>
++        )}
++
++        {publishableKey && error && (
++          <div className="card p-6">
++            <p className="field-error">{error}</p>
++            <Link to={`/orders/${orderId}`} className="btn-secondary mt-4">View order</Link>
++          </div>
++        )}
++
++        {publishableKey && !error && (!order || !clientSecret) && <Loader />}
++
++        {publishableKey && !error && order && clientSecret && (
++          <div className="card p-5 sm:p-6">
++            <p className="mb-4 text-sm text-ink-soft">
++              Your items are reserved for a short time. Please complete the payment to confirm your order.
++            </p>
++            <Elements stripe={stripePromise} options={options}>
++              <CardForm order={order} />
++            </Elements>
++          </div>
++        )}
++      </div>
++    </div>
++  );
++}
++
++export default PaymentPage;

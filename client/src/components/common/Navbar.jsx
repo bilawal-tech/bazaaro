@@ -178,7 +178,7 @@ function Navbar() {
             >
               <FiShoppingCart size={20} />
               {cartCount > 0 && (
-                <span className="absolute right-0 top-0 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-accent-400 px-1 text-xs font-bold text-brand-950">
+                <span key={cartCount} className="absolute right-0 top-0 flex h-5 animate-bump motion-reduce:animate-none min-w-[20px] items-center justify-center rounded-full bg-accent-400 px-1 text-xs font-bold text-brand-950">
                   {cartCount > 99 ? '99+' : cartCount}
                 </span>
               )}
