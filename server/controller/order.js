@@ -84,7 +84,7 @@ async function createOrder(req, res) {
     const orderItems = [];
 
     for (const item of cart.items) {
-      const product = await Product.findById(item.product);
+      const product = await Product.findById(item.product).lean();
       if (!product) {
         return res.status(404).json({
           success: false,

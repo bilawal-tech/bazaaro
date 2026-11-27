@@ -7,6 +7,7 @@ const crypto = require('crypto');
 const { OAuth2Client } = require('google-auth-library');
 const { parsePagination } = require('../utils/query');
 const { sendMail } = require('../utils/mailer');
+const { clearAuthCache } = require('../middleware/authMiddleware');
 
 const googleClient = new OAuth2Client();
 
@@ -394,6 +395,7 @@ async function deleteUser(req, res) {
 
     await Cart.deleteOne({ user: id });
     await user.deleteOne();
+    clearAuthCache(id);
 
     return res.status(200).json({
       success: true,
@@ -452,6 +454,7 @@ async function updateUserProfile(req, res) {
     if (avatar)  user.avatar  = avatar;
 
     await user.save();
+    clearAuthCache(user._id);
 
     //response se password hata do
     const updatedUser = user.toObject();

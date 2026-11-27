@@ -162,7 +162,8 @@ app.use((err, req, res, next) => {
 const PORT = process.env.PORT || 5000;
 const server = app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
-  startUnpaidOrderSweeper();
+  // Cluster mein sirf ek worker sweeper chalata hai (SWEEPER=1); akele chalne par hamesha
+  if (!process.env.CLUSTER_WORKER || process.env.SWEEPER === '1') startUnpaidOrderSweeper();
 });
 
 // Band hone se pehle Kafka producer flush

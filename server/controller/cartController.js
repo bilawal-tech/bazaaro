@@ -23,7 +23,7 @@ async function addToCart(req, res) {
             return res.status(400).json({ success: false, message: 'Quantity must be at least 1' });
         }
 
-        const product = await Product.findById(productId);
+        const product = await Product.findById(productId).lean();
         if (!product) {
             return res.status(404).json({ success: false, message: 'Product not found' });
         }
@@ -94,8 +94,13 @@ async function getCart(req, res) {
             });
         }
 
-        await cart.updateProductPrices();
-        await cart.save();
+        // Ek hi query mein saare products; save sirf tab jab koi price badla ho
+        const changed = await cart.updateProductPrices();
+        if (changed) {
+            await cart.save();
+        } else {
+            await Cart.updateOne({ _id: cart._id }, { $set: { lastActivityAt: new Date() } });
+        }
         await cart.populate('items.product', 'name price discountPrice images stock variants');
 
         return res.status(200).json({ success: true, message: 'Cart retrieved successfully', cart });
@@ -126,7 +131,7 @@ async function updateCart(req, res) {
             return res.status(404).json({ success: false, message: 'Item not found in cart' });
         }
 
-        const product = await Product.findById(item.product);
+        const product = await Product.findById(item.product).lean();
         if (!product) {
             return res.status(404).json({ success: false, message: 'Product no longer exists' });
         }

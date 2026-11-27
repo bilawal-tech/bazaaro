@@ -14,4 +14,5 @@ RUN mkdir -p /app/uploads && chown -R node:node /app/uploads
 USER node
 
 EXPOSE 5000
-CMD ["node", "server.js"]
+# WEB_CONCURRENCY=N: server ki N copies (CPU cores). 1 = ek hi
+CMD ["node", "cluster.js"]

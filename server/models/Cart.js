@@ -83,14 +83,24 @@ CartSchema.methods.calculateTotals = function () {
 CartSchema.methods.updateProductPrices = async function () {
   const Product = mongoose.model('Product');
 
+  // Ek query mein saare products (pehle har item ke liye alag query thi). Return: koi price badla?
+  const ids = [...new Set(this.items.map((i) => String(i.product)))];
+  const products = await Product.find({ _id: { $in: ids } }).lean();
+  const byId = new Map(products.map((p) => [String(p._id), p]));
+
+  let changed = false;
   for (const item of this.items) {
-    const product = await Product.findById(item.product);
+    const product = byId.get(String(item.product));
     if (!product) continue;
 
     const line = resolveLine(product, item.color, item.size);
-    if (line.ok) item.currentProductPrice = line.unitPrice;
+    if (line.ok && item.currentProductPrice !== line.unitPrice) {
+      item.currentProductPrice = line.unitPrice;
+      changed = true;
+    }
   }
   this.calculateTotals();
+  return changed;
 };
 
 CartSchema.pre('save', function () {

@@ -225,7 +225,8 @@ async function getAllProducts(req, res) {
       .populate('category', 'name slug')
       .sort(sortBy)
       .skip(skip)
-      .limit(limit);
+      .limit(limit)
+      .lean();  // sirf padhna hai: plain objects (Mongoose object banana CPU khata hai)
 
     return res.status(200).json({
       success: true,
@@ -253,7 +254,8 @@ async function getSingleProduct(req, res) {
 
     const product = await Product.findOne(filter)
       .populate('category', 'name slug')
-      .populate('reviews.user', 'name avatar');
+      .populate('reviews.user', 'name avatar')
+      .lean();
 
     if (!product) {
       return res.status(404).json({
@@ -281,7 +283,8 @@ async function getproductBySlug(req, res) {
 
     const product = await Product.findOne({ slug })
       .populate('category', 'name slug')
-      .populate('reviews.user', 'name avatar');
+      .populate('reviews.user', 'name avatar')
+      .lean();
 
     if (!product) {
       return res.status(404).json({

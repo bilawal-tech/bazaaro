@@ -47,6 +47,8 @@ services:
       MONGO_URI: mongodb://mongo:27017/bazaaro
       CLIENT_URL: http://localhost:5173
       KAFKA_BROKERS: kafka:9092
+      # Node ek core use karta hai: 4 copies = 4 cores. Kam/zyada: set WEB_CONCURRENCY in server/.env ya shell
+      WEB_CONCURRENCY: ${WEB_CONCURRENCY:-4}
     ports:
       - "5000:5000"
     volumes:
