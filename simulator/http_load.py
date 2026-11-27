@@ -23,8 +23,8 @@ import statistics
 import sys
 import threading
 import time
-import urllib.error
-import urllib.request
+import http.client
+import urllib.parse
 from collections import Counter, defaultdict
 
 STATE_FILE = "sim_state.json"
@@ -44,28 +44,50 @@ lock = threading.Lock()
 lat = defaultdict(list)           # endpoint -> [seconds]
 codes = defaultdict(Counter)      # endpoint -> {status: count}
 events = Counter()                # business counters (orders placed, carts abandoned ...)
+samples = Counter()               # (endpoint, status, message) -> count: errors ki wajah
 
 
 class Api:
+    """Har thread ki apni persistent (keep-alive) connection: nayi TCP connection har request par nahi khulti."""
+
     def __init__(self, base):
-        self.base = base.rstrip("/")
+        u = urllib.parse.urlparse(base.rstrip("/"))
+        self.host, self.port, self.prefix = u.hostname, u.port or 80, u.path
+        self.local = threading.local()
+
+    def _conn(self, fresh=False):
+        c = getattr(self.local, "c", None)
+        if c is None or fresh:
+            if c is not None:
+                c.close()
+            c = http.client.HTTPConnection(self.host, self.port, timeout=30)
+            self.local.c = c
+        return c
+
+    def _once(self, method, path, data, headers, fresh):
+        c = self._conn(fresh)
+        c.request(method, self.prefix + path, body=data, headers=headers)
+        r = c.getresponse()
+        return r.status, r.read()
 
     def call(self, method, path, body=None, token=None, name=None, timeout=30):
         data = json.dumps(body).encode() if body is not None else None
-        req = urllib.request.Request(self.base + path, data=data, method=method)
-        if data is not None:
-            req.add_header("Content-Type", "application/json")
+        headers = {"Content-Type": "application/json"} if data is not None else {}
         if token:
-            req.add_header("Authorization", f"Bearer {token}")
+            headers["Authorization"] = f"Bearer {token}"
         t0 = time.perf_counter()
-        status, payload = 0, {}
+        status, raw = 0, b""
+        reused = getattr(self.local, "c", None) is not None
         try:
-            with urllib.request.urlopen(req, timeout=timeout) as r:
-                status, raw = r.status, r.read()
-        except urllib.error.HTTPError as e:
-            status, raw = e.code, e.read()
+            try:
+                status, raw = self._once(method, path, data, headers, False)
+            except (http.client.RemoteDisconnected, BrokenPipeError, ConnectionResetError, http.client.CannotSendRequest):
+                if not reused:
+                    raise
+                status, raw = self._once(method, path, data, headers, True)  # purani idle connection toot chuki thi
         except Exception:
             status, raw = 0, b""  # connection error / timeout
+            self._conn(True)
         dt = time.perf_counter() - t0
         try:
             payload = json.loads(raw) if raw else {}
@@ -75,6 +97,9 @@ class Api:
         with lock:
             lat[key].append(dt)
             codes[key][status] += 1
+            if status == 0 or status >= 400:
+                msg = (payload.get("message") if isinstance(payload, dict) else None) or "-"
+                samples[(key, status, str(msg)[:120])] += 1
         return status, payload
 
 
@@ -145,10 +170,10 @@ def setup(a):
 
 
 # ── Run: traffic ─────────────────────────────
-def customer_loop(api, st, a, stop, pending, plock, rng):
+def customer_loop(api, st, a, stop, pending, plock, rng, users):
     products = st["products"]
     while not stop.is_set():
-        u = rng.choice(st["users"])
+        u = rng.choice(users)  # har worker ke apne users: do worker ek cart par kabhi nahi takrate
         tok = u["token"]
         think = lambda: stop.wait(rng.uniform(0.3, 1.5) * a.think)
 
@@ -235,8 +260,10 @@ def run(a):
     st = json.load(open(a.state))
     if not st["users"] or not st["products"]:
         sys.exit("State khali hai. Pehle `setup` chalao.")
+    if a.workers > len(st["users"]):
+        sys.exit(f"Workers ({a.workers}) users ({len(st['users'])}) se zyada hain. `setup --users` barhao.")
     api, stop, pending, plock = Api(a.base or st["base"]), threading.Event(), [], threading.Lock()
-    ths = [threading.Thread(target=customer_loop, args=(api, st, a, stop, pending, plock, random.Random(i)), daemon=True)
+    ths = [threading.Thread(target=customer_loop, args=(api, st, a, stop, pending, plock, random.Random(i), st["users"][i::a.workers]), daemon=True)
            for i in range(a.workers)]
     ths.append(threading.Thread(target=admin_loop, args=(api, st, a, stop, pending, plock, random.Random(999)), daemon=True))
     print(f"{a.workers} workers, {a.duration}s (ramp {a.ramp}s). Ctrl+C se jaldi band.")
@@ -281,6 +308,12 @@ def report(elapsed=None, path=None):
         print(f"\nTotal {total:,} requests in {elapsed:.0f}s = {total / elapsed:.1f} req/s, server errors: {errs}")
     if events:
         print("Business:", dict(events))
+    bad = [(k, n) for k, n in samples.most_common() if k[1] == 0 or k[1] >= 400]
+    if bad:
+        print("\nErrors ki wajah (endpoint, status, message, count):")
+        for (ep, st_, msg), n in bad[:12]:
+            print(f"  {ep:<26} {st_:<4} {msg:<60} x{n}")
+        out["error_samples"] = [{"endpoint": k[0], "status": k[1], "message": k[2], "count": n} for k, n in bad[:30]]
     if any(429 in c for c in codes.values()):
         print("NOTE: 429 aaye: server/.env mein RATE_LIMIT_DISABLED=true karo aur server restart.")
     if path:
