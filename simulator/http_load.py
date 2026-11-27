@@ -285,6 +285,24 @@ def run(a):
     report(time.time() - t0, a.report)
 
 
+def baseline(a):
+    """Bina login/DB ke ek hi URL par hathoda: network + Python client ki apni hadd nikalne ke liye."""
+    api = Api(a.base)
+    stop = threading.Event()
+    path = a.path
+
+    def hammer():
+        while not stop.is_set():
+            api.call("GET", path, name=f"GET {path}")
+    ths = [threading.Thread(target=hammer, daemon=True) for _ in range(a.workers)]
+    t0 = time.time()
+    [t.start() for t in ths]
+    time.sleep(a.duration)
+    stop.set()
+    time.sleep(0.5)
+    report(time.time() - t0)
+
+
 def pct(xs, p):
     xs = sorted(xs)
     return xs[min(len(xs) - 1, int(len(xs) * p))] * 1000
@@ -334,6 +352,11 @@ def main():
     s.add_argument("--stock", type=int, default=200, help="har size ka shuru ka stock")
     s.add_argument("--seed", type=int, default=7)
     s.add_argument("--state", default=STATE_FILE)
+    b = sub.add_parser("baseline", help="ek URL par seedha hathoda (network/client ki hadd naapne ke liye)")
+    b.add_argument("--base", default="http://localhost:5000")
+    b.add_argument("--path", default="/", help="'/' = bina database; '/api/products?limit=1' = database ke saath")
+    b.add_argument("--workers", type=int, default=50)
+    b.add_argument("--duration", type=int, default=15)
     r = sub.add_parser("run", help="traffic chalao + capacity report")
     r.add_argument("--base", default=None)
     r.add_argument("--workers", type=int, default=10, help="ek waqt mein kitne customers")
@@ -346,7 +369,7 @@ def main():
     r.add_argument("--report", default="load_report.json")
     r.add_argument("--state", default=STATE_FILE)
     a = ap.parse_args()
-    {"setup": setup, "run": run}[a.cmd](a)
+    {"setup": setup, "run": run, "baseline": baseline}[a.cmd](a)
 
 
 if __name__ == "__main__":

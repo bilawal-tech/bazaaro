@@ -117,6 +117,9 @@ services:
   simulator:
     profiles: [simulator]
     build: ./simulator
+    volumes:
+      # state/report files (sim_state.json, load_report.json) host ke simulator folder mein rehti hain
+      - ./simulator:/work
     depends_on:
       kafka:
         condition: service_healthy
